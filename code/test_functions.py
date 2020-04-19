@@ -39,7 +39,7 @@ def test_dot_product_known_values():
 
 
 def test_dot_product_compare_numpy_dot():
-    'check results produced by different implementations'
+    'compare with numpy.dot'
     np.random.seed = 41
     vector_1 = np.random.rand(13)
     vector_2 = np.random.rand(13)
@@ -50,3 +50,35 @@ def test_dot_product_compare_numpy_dot():
     aae(reference_output_numpy, computed_output_dumb, decimal=10)
     aae(reference_output_numpy, computed_output_numpy, decimal=10)
     aae(reference_output_numpy, computed_output_numba, decimal=10)
+
+
+# Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)
+
+def test_DFT_compare_numpy_fft_fft():
+    'compare with numpy.fft.fft'
+    np.random.seed = 56
+    # unscaled DFT
+    data = np.random.rand(100)
+    reference_output_numpy = np.fft.fft(a=data, norm=None)
+    computed_output_dumb = fcs.DFT_dumb(x=data, scale=None)
+    aae(reference_output_numpy, computed_output_dumb, decimal=10)
+    # scaled DFT
+    data = np.random.rand(100)
+    reference_output_numpy = np.fft.fft(a=data, norm='ortho')
+    computed_output_dumb = fcs.DFT_dumb(x=data, scale='sqrtn')
+    aae(reference_output_numpy, computed_output_dumb, decimal=10)
+
+
+def test_IDFT_compare_numpy_fft_ifft():
+    'compare with numpy.fft.ifft'
+    np.random.seed = 4
+    # unscaled DFT
+    data = np.random.rand(100)+1j*np.random.rand(100)
+    reference_output_numpy = np.fft.ifft(a=data, norm=None)
+    computed_output_dumb = fcs.IDFT_dumb(x=data, scale='N')
+    aae(reference_output_numpy, computed_output_dumb, decimal=10)
+    # scaled DFT
+    data = np.random.rand(100)+1j*np.random.rand(100)
+    reference_output_numpy = np.fft.ifft(a=data, norm='ortho')
+    computed_output_dumb = fcs.IDFT_dumb(x=data, scale='sqrtn')
+    aae(reference_output_numpy, computed_output_dumb, decimal=10)
