@@ -54,6 +54,24 @@ def test_dot_product_compare_numpy_dot():
 
 # Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)
 
+def test_DFT_invalid_scalar():
+    'check error for invalid scaling factor'
+    data = np.zeros(10)
+    invalid_scales = [data.size, np.sqrt(data.size), 'n', 'srqtn']
+    with pytest.raises(AssertionError):
+        for invalid_scale in invalid_scales:
+            fcs.DFT_dumb(x=data, scale=invalid_scale)
+
+
+def test_IDFT_invalid_scalar():
+    'check error for invalid scaling factor'
+    data = np.zeros(10)
+    invalid_scales = [data.size, np.sqrt(data.size), 'n', 'srqtn']
+    with pytest.raises(AssertionError):
+        for invalid_scale in invalid_scales:
+            fcs.IDFT_dumb(x=data, scale=invalid_scale)
+
+
 def test_DFT_compare_numpy_fft_fft():
     'compare with numpy.fft.fft'
     np.random.seed = 56
