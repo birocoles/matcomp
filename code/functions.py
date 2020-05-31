@@ -3,17 +3,17 @@ from numba import jit
 
 # dot product
 
-def dot_product_dumb(x, y):
+def dot_dumb(x, y):
     '''
     Compute the dot product of x and y, where
-    x, y are elements of R^N.
+    x, y are elements of C^N.
 
     The code uses a simple for to iterate on the arrays.
 
     Parameters
     ----------
     x, y : arrays 1D
-        Vectors with N real elements.
+        Vectors with N elements.
 
     Returns
     -------
@@ -30,17 +30,17 @@ def dot_product_dumb(x, y):
     return result
 
 
-def dot_product_numpy(x, y):
+def dot_numpy(x, y):
     '''
     Compute the dot product of x and y, where
-    x, y are elements of R^N.
+    x, y are elements of C^N.
 
     The code uses numpy.sum.
 
     Parameters
     ----------
     x, y : arrays 1D
-        Vectors with N real elements.
+        Vectors with N elements.
 
     Returns
     -------
@@ -56,7 +56,7 @@ def dot_product_numpy(x, y):
 
 
 @jit(nopython=True)
-def dot_product_numba(x, y):
+def dot_numba(x, y):
     '''
     Compute the dot product of x and y, where
     x, y are elements of R^N.
