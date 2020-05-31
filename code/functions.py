@@ -61,7 +61,7 @@ def dot_product_numba(x, y):
     Compute the dot product of x and y, where
     x, y are elements of R^N.
 
-    The code uses numba for speed up computations.
+    The code uses numba.
 
     Parameters
     ----------
