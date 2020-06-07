@@ -106,19 +106,123 @@ def test_dot_real_scalar_multiplication():
     aae(output_c1a_c2b_numba, output_c1c2_ab_numba, decimal=10)
 
 
-def test_dot_complex_compare_numpy_dot():
-    'compare with numpy.dot'
+def test_dot_complex_functions_compare_numpy_dot():
+    'compare dot_complex_dumb, numpy and numba with numpy.dot'
     # first input complex
     np.random.seed = 3
     vector_1 = np.random.rand(13) + np.random.rand(13)*1j
     vector_2 = np.random.rand(13)
-    computed_output_dumb = fcs.dot_complex_dumb(vector_1, vector_2)
-    computed_output_numpy = fcs.dot_complex_numpy(vector_1, vector_2)
-    computed_output_numba = fcs.dot_complex_numba(vector_1, vector_2)
-    computed_output_numpy = np.dot(vector_1, vector_2)
-    aae(computed_output_dumb, computed_output_numpy, decimal=10)
-    aae(computed_output_numpy, computed_output_numpy, decimal=10)
-    aae(computed_output_numba, computed_output_numpy, decimal=10)
+    output_dumb = fcs.dot_complex_dumb(vector_1, vector_2)
+    output_numpy = fcs.dot_complex_numpy(vector_1, vector_2)
+    output_numba = fcs.dot_complex_numba(vector_1, vector_2)
+    output_numpy_dot = np.dot(vector_1, vector_2)
+    aae(output_dumb, output_numpy_dot, decimal=10)
+    aae(output_numpy, output_numpy_dot, decimal=10)
+    aae(output_numba, output_numpy_dot, decimal=10)
+
+
+def test_dot_complex_compare_numpy_dot():
+    'compare dot_complex with numpy.dot'
+    # first input complex
+    np.random.seed = 78
+    vector_1 = np.random.rand(10) + np.random.rand(10)*1j
+    vector_2 = np.random.rand(10) + np.random.rand(10)*1j
+    output_dumb = fcs.dot_complex(vector_1, vector_2, function='dumb')
+    output_numpy = fcs.dot_complex(vector_1, vector_2, function='numpy')
+    output_numba = fcs.dot_complex(vector_1, vector_2, function='numba')
+    output_numpy_dot = np.dot(vector_1, vector_2)
+    aae(output_dumb, output_numpy_dot, decimal=10)
+    aae(output_numpy, output_numpy_dot, decimal=10)
+    aae(output_numba, output_numpy_dot, decimal=10)
+
+
+def test_dot_complex_compare_numpy_vdot():
+    'compare dot_complex with numpy.vdot'
+    # first input complex
+    np.random.seed = 78
+    vector_1 = np.random.rand(10) + np.random.rand(10)*1j
+    vector_2 = np.random.rand(10) + np.random.rand(10)*1j
+    output_dumb = fcs.dot_complex(vector_1, vector_2,
+                                  conjugate=True, function='dumb')
+    output_numpy = fcs.dot_complex(vector_1, vector_2,
+                                   conjugate=True, function='numpy')
+    output_numba = fcs.dot_complex(vector_1, vector_2,
+                                   conjugate=True, function='numba')
+    output_numpy_dot = np.vdot(vector_1, vector_2)
+    aae(output_dumb, output_numpy_dot, decimal=10)
+    aae(output_numpy, output_numpy_dot, decimal=10)
+    aae(output_numba, output_numpy_dot, decimal=10)
+
+
+def test_dot_complex_invalid_function():
+    'fail due to invalid function'
+    vector_1 = np.ones(10)
+    vector_2 = np.arange(10)+1.5
+    with pytest.raises(ValueError):
+        fcs.dot_complex(vector_1, vector_2, function='not_valid_function')
+
+
+# Hadamard product
+
+def test_hadamard_real_different_shapes():
+    'fail due to inputs having different sizes'
+    a = np.linspace(5,10,8)
+    B = np.ones((4,4))
+    with pytest.raises(AssertionError):
+        fcs.hadamard_real_dumb(a, B)
+        fcs.hadamard_real_numpy(a, B)
+        fcs.hadamard_real_numba(a, B)
+
+
+def test_hadamard_real_compare_asterisk():
+    'compare hadamard_real function with * operator'
+    # for vectors
+    np.random.seed = 78
+    input1 = np.random.rand(10)
+    input2 = np.random.rand(10)
+    output_dumb = fcs.hadamard_real_dumb(input1, input2)
+    output_numpy = fcs.hadamard_real_numba(input1, input2)
+    output_numba = fcs.hadamard_real_numba(input1, input2)
+    output_asterisk = input1*input2
+    aae(output_dumb, output_asterisk, decimal=10)
+    aae(output_numpy, output_asterisk, decimal=10)
+    aae(output_numba, output_asterisk, decimal=10)
+    # for matrices
+    np.random.seed = 78
+    input1 = np.random.rand(5, 7)
+    input2 = np.random.rand(5, 7)
+    output_dumb = fcs.hadamard_real_dumb(input1, input2)
+    output_numpy = fcs.hadamard_real_numba(input1, input2)
+    output_numba = fcs.hadamard_real_numba(input1, input2)
+    output_asterisk = input1*input2
+    aae(output_dumb, output_asterisk, decimal=10)
+    aae(output_numpy, output_asterisk, decimal=10)
+    aae(output_numba, output_asterisk, decimal=10)
+
+
+def test_hadamard_complex_compare_asterisk():
+    'compare hadamard_complex function with * operator'
+    # for matrices
+    np.random.seed = 43
+    input1 = np.random.rand(4, 3)
+    input2 = np.random.rand(4, 3)
+    output_dumb = fcs.hadamard_complex(input1, input2, function='dumb')
+    output_numpy = fcs.hadamard_complex(input1, input2, function='numpy')
+    output_numba = fcs.hadamard_complex(input1, input2, function='numba')
+    output_asterisk = input1*input2
+    aae(output_dumb, output_asterisk, decimal=10)
+    aae(output_numpy, output_asterisk, decimal=10)
+    aae(output_numba, output_asterisk, decimal=10)
+
+
+def test_hadamard_complex_invalid_function():
+    'fail due to invalid function'
+    vector_1 = np.ones(8)
+    vector_2 = np.arange(8)+1.5
+    with pytest.raises(ValueError):
+        fcs.hadamard_complex(vector_1, vector_2, function='not_valid_function')
+
+
 
 
 # Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)

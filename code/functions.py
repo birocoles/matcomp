@@ -99,6 +99,7 @@ def dot_real_numba(x, y, check_input=True):
 
     return result
 
+
 def dot_complex_dumb(x, y):
     '''
     Compute the dot product of x and y, where
@@ -182,6 +183,219 @@ def dot_complex_numba(x, y):
     result_real -= dot_real_numba(x.imag, y.imag, check_input=False)
     result_imag = dot_real_numba(x.real, y.imag, check_input=False)
     result_imag = dot_real_numba(x.imag, y.real, check_input=False)
+    result = result_real + 1j*result_imag
+
+    return result
+
+
+def dot_complex(x, y, conjugate=False, function='numba'):
+    '''
+    Compute the dot product of x and y, where
+    x, y are elements of C^N.
+
+    Parameters
+    ----------
+    x, y : arrays 1D
+        Vectors with N elements.
+
+    conjugate : boolean
+        If True, uses the complex conjugate of y. Default is False.
+
+    function : string
+        Function to be used for computing the real dot product.
+        The function name must be 'dumb', 'numpy' or 'numba'.
+        Default is 'numba'.
+
+    Returns
+    -------
+    result : scalar
+        Dot product of x and y.
+    '''
+    assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+    assert x.size == y.size, 'x and y must have the same size'
+
+    dot_real = {
+        'dumb': dot_real_dumb,
+        'numpy': dot_real_numpy,
+        'numba': dot_real_numba
+    }
+    if function not in dot_real:
+        raise ValueError("Function {} not recognized".format(function))
+
+    if conjugate is True:
+        result_real = dot_real[function](x.real, y.real, check_input=False)
+        result_real += dot_real[function](x.imag, y.imag, check_input=False)
+        result_imag = dot_real[function](x.real, y.imag, check_input=False)
+        result_imag -= dot_real[function](x.imag, y.real, check_input=False)
+    else:
+        result_real = dot_real[function](x.real, y.real, check_input=False)
+        result_real -= dot_real[function](x.imag, y.imag, check_input=False)
+        result_imag = dot_real[function](x.real, y.imag, check_input=False)
+        result_imag += dot_real[function](x.imag, y.real, check_input=False)
+
+    result = result_real + 1j*result_imag
+
+    return result
+
+
+# Hadamard (entrywise) product
+
+def hadamard_real_dumb(x, y, check_input=True):
+    '''
+    Compute the Hadamard (or entrywise) product of x and y, where
+    x and y may be real vectors or matrices having the same shape.
+    The imaginary parts are ignored.
+
+    The code uses a simple doubly nested loop to iterate on the arrays.
+
+    Parameters
+    ----------
+    x, y : arrays
+        Real vectors or matrices having the same shape.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array
+        Hadamard product of x and y.
+    '''
+    if check_input is True:
+        assert x.shape == y.shape, 'x and y must have the same shape'
+        assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
+or matrices'
+
+    result = np.empty_like(x)
+    if x.ndim == 1:
+        for i in range(x.shape[0]):
+            # the '.real' forces the code to use
+            # only the real part of the arrays
+            result[i] = x.real[i]*y.real[i]
+    else:
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
+                # the '.real' forces the code to use
+                # only the real part of the arrays
+                result[i,j] = x.real[i,j]*y.real[i,j]
+
+    return result
+
+
+def hadamard_real_numpy(x, y, check_input=True):
+    '''
+    Compute the Hadamard (or entrywise) product of x and y, where
+    x and y may be real vectors or matrices having the same shape.
+    The imaginary parts are ignored.
+
+    The code uses the asterisk (star) operator.
+
+    Parameters
+    ----------
+    x, y : arrays
+        Real vectors or matrices having the same shape.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array
+        Hadamard product of x and y.
+    '''
+    if check_input is True:
+        assert x.shape == y.shape, 'x and y must have the same shape'
+        assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
+or matrices'
+
+    result = np.empty_like(x)
+
+    # the '.real' forces the code to use
+    # only the real part of the arrays
+    result = x.real*y.real
+
+    return result
+
+
+@jit(nopython=True)
+def hadamard_real_numba(x, y, check_input=True):
+    '''
+    Compute the Hadamard (or entrywise) product of x and y, where
+    x and y may be real vectors or matrices having the same shape.
+    The imaginary parts are ignored.
+
+    The code uses numba.
+
+    Parameters
+    ----------
+    x, y : arrays
+        Real vectors or matrices having the same shape.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array
+        Hadamard product of x and y.
+    '''
+    if check_input is True:
+        assert x.shape == y.shape, 'x and y must have the same shape'
+        assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
+or matrices'
+
+    result = np.empty_like(x)
+    if x.ndim == 1:
+        for i in range(x.shape[0]):
+            # the '.real' forces the code to use
+            # only the real part of the arrays
+            result[i] = x.real[i]*y.real[i]
+    else:
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
+                # the '.real' forces the code to use
+                # only the real part of the arrays
+                result[i,j] = x.real[i,j]*y.real[i,j]
+
+    return result
+
+
+def hadamard_complex(x, y, function='numba'):
+    '''
+    Compute the Hadamard (or entrywise) product of x and y, where
+    x and y may be complex vectors or matrices having the same shape.
+
+    Parameters
+    ----------
+    x, y : arrays
+        Complex vectors or matrices having the same shape.
+
+    function : string
+        Function to be used for computing the real Hadamard product.
+        The function name must be 'dumb', 'numpy' or 'numba'.
+        Default is 'numba'.
+
+    Returns
+    -------
+    result : array
+        Hadamard product of x and y.
+    '''
+    assert x.shape == y.shape, 'x and y must have the same shape'
+    assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors or matrices'
+
+    hadamard_real = {
+        'dumb': hadamard_real_dumb,
+        'numpy': hadamard_real_numpy,
+        'numba': hadamard_real_numba
+    }
+    if function not in hadamard_real:
+        raise ValueError("Function {} not recognized".format(function))
+
+    result_real = hadamard_real[function](x.real, y.real, check_input=False)
+    result_real -= hadamard_real[function](x.imag, y.imag, check_input=False)
+    result_imag = hadamard_real[function](x.real, y.imag, check_input=False)
+    result_imag += hadamard_real[function](x.imag, y.real, check_input=False)
+
     result = result_real + 1j*result_imag
 
     return result
