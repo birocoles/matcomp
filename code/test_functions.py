@@ -249,6 +249,81 @@ def test_hadamard_complex_invalid_function():
     with pytest.raises(ValueError):
         fcs.hadamard_complex(vector_1, vector_2, function='not_valid_function')
 
+# Outer product
+
+def test_outer_real_input_not_vector():
+    'fail with non-vector inputs'
+    a = np.linspace(5,10,8)
+    B = np.ones((4,4))
+    with pytest.raises(AssertionError):
+        fcs.outer_real_dumb(a, B)
+        fcs.outer_real_numba(a, B)
+
+
+def test_outer_real_compare_numpy_outer():
+    'compare with numpy.outer'
+    np.random.seed = 301
+    vector_1 = np.random.rand(13)
+    vector_2 = np.random.rand(13)
+    reference_output_numpy = np.outer(vector_1, vector_2)
+    computed_output_dumb = fcs.outer_real_dumb(vector_1, vector_2)
+    computed_output_numba = fcs.outer_real_numba(vector_1, vector_2)
+    aae(reference_output_numpy, computed_output_dumb, decimal=10)
+    aae(reference_output_numpy, computed_output_numba, decimal=10)
+
+
+def test_outer_real_known_values():
+    'check output produced by specific input'
+    vector_1 = np.ones(5)
+    vector_2 = np.arange(1,11)
+    reference_output = np.resize(vector_2, (vector_1.size, vector_2.size))
+    computed_output_dumb = fcs.outer_real_dumb(vector_1, vector_2)
+    computed_output_numba = fcs.outer_real_numba(vector_1, vector_2)
+    aae(reference_output, computed_output_dumb, decimal=10)
+    aae(reference_output, computed_output_numba, decimal=10)
+
+
+def test_outer_real_transposition():
+    'verify the transposition property'
+    np.random.seed = 72
+    a = np.random.rand(8)
+    b = np.random.rand(5)
+    a_outer_b_T_dumb = fcs.outer_real_dumb(a, b).T
+    b_outer_a_dumb = fcs.outer_real_dumb(b, a)
+    a_outer_b_T_numba = fcs.outer_real_numba(a, b).T
+    b_outer_a_numba = fcs.outer_real_numba(b, a)
+    aae(a_outer_b_T_dumb, b_outer_a_dumb, decimal=10)
+    aae(a_outer_b_T_numba, b_outer_a_numba, decimal=10)
+
+
+def test_outer_real_distributivity():
+    'verify the distributivity property'
+    np.random.seed = 72
+    a = np.random.rand(5)
+    b = np.random.rand(5)
+    c = np.random.rand(4)
+    a_plus_b_outer_c_dumb = fcs.outer_real_dumb(a+b, c)
+    a_outer_c_plus_b_outer_c_dumb = fcs.outer_real_dumb(a, c) + \
+                                    fcs.outer_real_dumb(b, c)
+    a_plus_b_outer_c_numba = fcs.outer_real_numba(a+b, c)
+    a_outer_c_plus_b_outer_c_numba = fcs.outer_real_numba(a, c) + \
+                                     fcs.outer_real_numba(b, c)
+    aae(a_plus_b_outer_c_dumb, a_outer_c_plus_b_outer_c_dumb, decimal=10)
+    aae(a_plus_b_outer_c_numba, a_outer_c_plus_b_outer_c_numba, decimal=10)
+
+
+def test_outer_real_scalar_multiplication():
+    'verify scalar multiplication property'
+    np.random.seed = 2
+    a = np.random.rand(3)
+    b = np.random.rand(6)
+    c = 3.4
+    ca_outer_b_dumb = fcs.outer_real_dumb(c*a, b)
+    a_outer_cb_dumb = fcs.outer_real_dumb(a, c*b)
+    ca_outer_b_numba = fcs.outer_real_numba(c*a, b)
+    a_outer_cb_numba = fcs.outer_real_numba(a, c*b)
+    aae(ca_outer_b_dumb, a_outer_cb_dumb, decimal=10)
+    aae(ca_outer_b_numba, a_outer_cb_numba, decimal=10)
 
 
 

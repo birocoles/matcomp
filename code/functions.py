@@ -301,16 +301,18 @@ or matrices'
 
     result = np.empty_like(x)
     if x.ndim == 1:
+        result[:] = 0
         for i in range(x.shape[0]):
             # the '.real' forces the code to use
             # only the real part of the arrays
-            result[i] = x.real[i]*y.real[i]
+            result[i] += x.real[i]*y.real[i]
     else:
+        result[:,:] = 0
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 # the '.real' forces the code to use
                 # only the real part of the arrays
-                result[i,j] = x.real[i,j]*y.real[i,j]
+                result[i,j] += x.real[i,j]*y.real[i,j]
 
     return result
 
@@ -377,16 +379,18 @@ or matrices'
 
     result = np.empty_like(x)
     if x.ndim == 1:
+        result[:] = 0
         for i in range(x.shape[0]):
             # the '.real' forces the code to use
             # only the real part of the arrays
-            result[i] = x.real[i]*y.real[i]
+            result[i] += x.real[i]*y.real[i]
     else:
+        result[:,:] = 0
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 # the '.real' forces the code to use
                 # only the real part of the arrays
-                result[i,j] = x.real[i,j]*y.real[i,j]
+                result[i,j] += x.real[i,j]*y.real[i,j]
 
     return result
 
@@ -420,16 +424,18 @@ or matrices'
 
     result = np.empty_like(x)
     if x.ndim == 1:
+        result[:] = 0
         for i in prange(x.shape[0]):
             # the '.real' forces the code to use
             # only the real part of the arrays
-            result[i] = x.real[i]*y.real[i]
+            result[i] += x.real[i]*y.real[i]
     else:
+        result[:,:] = 0
         for i in prange(x.shape[0]):
             for j in range(x.shape[1]):
                 # the '.real' forces the code to use
                 # only the real part of the arrays
-                result[i,j] = x.real[i,j]*y.real[i,j]
+                result[i,j] += x.real[i,j]*y.real[i,j]
 
     return result
 
@@ -477,6 +483,107 @@ def hadamard_complex(x, y, function='numba'):
 
 
 # Outer product
+
+def outer_real_dumb(x, y, check_input=True):
+    '''
+    Compute the outer product of x and y, where
+    x in R^N and y in R^M. The imaginary parts are ignored.
+
+    The code uses a simple "for" to iterate on the arrays.
+
+    Parameters
+    ----------
+    x, y : arrays 1D
+        Vectors with real elements.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array 2d
+        Outer product of x and y.
+    '''
+    if check_input is True:
+        assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+
+    result = np.empty((x.size, y.size))
+    result[:,:] = 0
+    for i in range(x.size):
+        # the '.real' forces the code to use
+        # only the real part of the arrays
+        result[i,:] += x.real[i]*y.real
+
+    return result
+
+
+def outer_real_dumb(x, y, check_input=True):
+    '''
+    Compute the outer product of x and y, where
+    x in R^N and y in R^M. The imaginary parts are ignored.
+
+    The code uses a simple "for" to iterate on the arrays.
+
+    Parameters
+    ----------
+    x, y : arrays 1D
+        Vectors with real elements.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array 2d
+        Outer product of x and y.
+    '''
+    if check_input is True:
+        assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+
+    result = np.empty((x.size, y.size))
+    result[:,:] = 0
+    for i in range(x.size):
+        # the '.real' forces the code to use
+        # only the real part of the arrays
+        result[i,:] += x.real[i]*y.real
+
+    return result
+
+
+@jit(nopython=True)
+def outer_real_numba(x, y, check_input=True):
+    '''
+    Compute the outer product of x and y, where
+    x in R^N and y in R^M. The imaginary parts are ignored.
+
+    The code uses numba.
+
+    Parameters
+    ----------
+    x, y : arrays 1D
+        Vectors with real elements.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array 2d
+        Outer product of x and y.
+    '''
+    if check_input is True:
+        assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+
+    result = np.empty((x.size, y.size))
+    result[:,:] = 0
+    for i in range(x.size):
+        # the '.real' forces the code to use
+        # only the real part of the arrays
+        result[i] += x.real[i]*y.real
+
+    return result
+
+
 
 # def outer_real_dumb(x, y, check_input=True):
 #     '''
