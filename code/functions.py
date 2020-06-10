@@ -1,5 +1,5 @@
 import numpy as np
-from numba import jit
+from numba import jit, prange
 
 # dot product
 
@@ -100,6 +100,39 @@ def dot_real_numba(x, y, check_input=True):
     return result
 
 
+@jit(nopython=True, parallel=True)
+def dot_real_parallel(x, y, check_input=True):
+    '''
+    Compute the dot product of x and y, where
+    x, y are elements of R^N. The imaginary parts are ignored.
+
+    The code uses numba with parallelization.
+
+    Parameters
+    ----------
+    x, y : arrays 1D
+        Vectors with N elements.
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : scalar
+        Dot product of x and y.
+    '''
+    if check_input is True:
+        assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+        assert x.size == y.size, 'x and y must have the same size'
+
+    result = 0
+    for i in prange(x.size):
+        # the '.real' forces the code to use
+        # only the real part of the arrays
+        result += x.real[i]*y.real[i]
+
+    return result
+
+
 def dot_complex_dumb(x, y):
     '''
     Compute the dot product of x and y, where
@@ -123,7 +156,7 @@ def dot_complex_dumb(x, y):
     result_real = dot_real_dumb(x.real, y.real, check_input=False)
     result_real -= dot_real_dumb(x.imag, y.imag, check_input=False)
     result_imag = dot_real_dumb(x.real, y.imag, check_input=False)
-    result_imag = dot_real_dumb(x.imag, y.real, check_input=False)
+    result_imag += dot_real_dumb(x.imag, y.real, check_input=False)
     result = result_real + 1j*result_imag
 
     return result
@@ -152,13 +185,12 @@ def dot_complex_numpy(x, y):
     result_real = dot_real_numpy(x.real, y.real, check_input=False)
     result_real -= dot_real_numpy(x.imag, y.imag, check_input=False)
     result_imag = dot_real_numpy(x.real, y.imag, check_input=False)
-    result_imag = dot_real_numpy(x.imag, y.real, check_input=False)
+    result_imag += dot_real_numpy(x.imag, y.real, check_input=False)
     result = result_real + 1j*result_imag
 
     return result
 
 
-@jit(nopython=True)
 def dot_complex_numba(x, y):
     '''
     Compute the dot product of x and y, where
@@ -182,7 +214,7 @@ def dot_complex_numba(x, y):
     result_real = dot_real_numba(x.real, y.real, check_input=False)
     result_real -= dot_real_numba(x.imag, y.imag, check_input=False)
     result_imag = dot_real_numba(x.real, y.imag, check_input=False)
-    result_imag = dot_real_numba(x.imag, y.real, check_input=False)
+    result_imag += dot_real_numba(x.imag, y.real, check_input=False)
     result = result_real + 1j*result_imag
 
     return result
@@ -217,7 +249,8 @@ def dot_complex(x, y, conjugate=False, function='numba'):
     dot_real = {
         'dumb': dot_real_dumb,
         'numpy': dot_real_numpy,
-        'numba': dot_real_numba
+        'numba': dot_real_numba,
+        'parallel': dot_real_parallel
     }
     if function not in dot_real:
         raise ValueError("Function {} not recognized".format(function))
@@ -308,8 +341,6 @@ def hadamard_real_numpy(x, y, check_input=True):
         assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
 or matrices'
 
-    result = np.empty_like(x)
-
     # the '.real' forces the code to use
     # only the real part of the arrays
     result = x.real*y.real
@@ -360,6 +391,49 @@ or matrices'
     return result
 
 
+@jit(nopython=True, parallel=True)
+def hadamard_real_parallel(x, y, check_input=True):
+    '''
+    Compute the Hadamard (or entrywise) product of x and y, where
+    x and y may be real vectors or matrices having the same shape.
+    The imaginary parts are ignored.
+
+    The code uses numba with automatic parallelization.
+
+    Parameters
+    ----------
+    x, y : arrays
+        Real vectors or matrices having the same shape.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array
+        Hadamard product of x and y.
+    '''
+    if check_input is True:
+        assert x.shape == y.shape, 'x and y must have the same shape'
+        assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
+or matrices'
+
+    result = np.empty_like(x)
+    if x.ndim == 1:
+        for i in prange(x.shape[0]):
+            # the '.real' forces the code to use
+            # only the real part of the arrays
+            result[i] = x.real[i]*y.real[i]
+    else:
+        for i in prange(x.shape[0]):
+            for j in range(x.shape[1]):
+                # the '.real' forces the code to use
+                # only the real part of the arrays
+                result[i,j] = x.real[i,j]*y.real[i,j]
+
+    return result
+
+
 def hadamard_complex(x, y, function='numba'):
     '''
     Compute the Hadamard (or entrywise) product of x and y, where
@@ -386,7 +460,8 @@ def hadamard_complex(x, y, function='numba'):
     hadamard_real = {
         'dumb': hadamard_real_dumb,
         'numpy': hadamard_real_numpy,
-        'numba': hadamard_real_numba
+        'numba': hadamard_real_numba,
+        'parallel': hadamard_real_parallel
     }
     if function not in hadamard_real:
         raise ValueError("Function {} not recognized".format(function))
@@ -399,6 +474,41 @@ def hadamard_complex(x, y, function='numba'):
     result = result_real + 1j*result_imag
 
     return result
+
+
+# Outer product
+
+# def outer_real_dumb(x, y, check_input=True):
+#     '''
+#     Compute the dot product of x and y, where
+#     x, y are elements of R^N. The imaginary parts are ignored.
+#
+#     The code uses a simple "for" to iterate on the arrays.
+#
+#     Parameters
+#     ----------
+#     x, y : arrays 1D
+#         Vectors with N elements.
+#
+#     check_input : boolean
+#         If True, verify if the input is valid. Default is True.
+#
+#     Returns
+#     -------
+#     result : scalar
+#         Dot product of x and y.
+#     '''
+#     if check_input is True:
+#         assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+#         assert x.size == y.size, 'x and y must have the same size'
+#
+#     result = 0
+#     for i in range(x.size):
+#         # the '.real' forces the code to use
+#         # only the real part of the arrays
+#         result += x.real[i]*y.real[i]
+#
+#     return result
 
 
 # Fourier Transform
