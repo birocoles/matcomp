@@ -1,5 +1,5 @@
 import numpy as np
-from numba import jit, prange
+from numba import njit, prange, vectorize, guvectorize
 
 # dot product
 
@@ -67,13 +67,14 @@ def dot_real_numpy(x, y, check_input=True):
     return result
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
+@njit
 def dot_real_numba(x, y, check_input=True):
     '''
     Compute the dot product of x and y, where
     x, y are elements of R^N. The imaginary parts are ignored.
 
-    The code uses numba.
+    The code uses numba jit.
 
     Parameters
     ----------
@@ -93,39 +94,6 @@ def dot_real_numba(x, y, check_input=True):
 
     result = 0
     for i in range(x.size):
-        # the '.real' forces the code to use
-        # only the real part of the arrays
-        result += x.real[i]*y.real[i]
-
-    return result
-
-
-@jit(nopython=True, parallel=True)
-def dot_real_parallel(x, y, check_input=True):
-    '''
-    Compute the dot product of x and y, where
-    x, y are elements of R^N. The imaginary parts are ignored.
-
-    The code uses numba with parallelization.
-
-    Parameters
-    ----------
-    x, y : arrays 1D
-        Vectors with N elements.
-    check_input : boolean
-        If True, verify if the input is valid. Default is True.
-
-    Returns
-    -------
-    result : scalar
-        Dot product of x and y.
-    '''
-    if check_input is True:
-        assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
-        assert x.size == y.size, 'x and y must have the same size'
-
-    result = 0
-    for i in prange(x.size):
         # the '.real' forces the code to use
         # only the real part of the arrays
         result += x.real[i]*y.real[i]
@@ -249,8 +217,7 @@ def dot_complex(x, y, conjugate=False, function='numba'):
     dot_real = {
         'dumb': dot_real_dumb,
         'numpy': dot_real_numpy,
-        'numba': dot_real_numba,
-        'parallel': dot_real_parallel
+        'numba': dot_real_numba
     }
     if function not in dot_real:
         raise ValueError("Function {} not recognized".format(function))
@@ -299,15 +266,13 @@ def hadamard_real_dumb(x, y, check_input=True):
         assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
 or matrices'
 
-    result = np.empty_like(x)
+    result = np.zeros_like(x)
     if x.ndim == 1:
-        result[:] = 0
         for i in range(x.shape[0]):
             # the '.real' forces the code to use
             # only the real part of the arrays
             result[i] += x.real[i]*y.real[i]
     else:
-        result[:,:] = 0
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 # the '.real' forces the code to use
@@ -350,7 +315,8 @@ or matrices'
     return result
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
+@njit
 def hadamard_real_numba(x, y, check_input=True):
     '''
     Compute the Hadamard (or entrywise) product of x and y, where
@@ -377,15 +343,13 @@ def hadamard_real_numba(x, y, check_input=True):
         assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
 or matrices'
 
-    result = np.empty_like(x)
+    result = np.zeros_like(x)
     if x.ndim == 1:
-        result[:] = 0
         for i in range(x.shape[0]):
             # the '.real' forces the code to use
             # only the real part of the arrays
             result[i] += x.real[i]*y.real[i]
     else:
-        result[:,:] = 0
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 # the '.real' forces the code to use
@@ -395,49 +359,57 @@ or matrices'
     return result
 
 
-@jit(nopython=True, parallel=True)
-def hadamard_real_parallel(x, y, check_input=True):
+@vectorize(['int32(int32, int32)',
+            'int64(int64, int64)',
+            'float32(float32, float32)',
+            'float64(float64, float64)'], target='parallel')
+def hadamard_real_vec_par(x, y):
     '''
     Compute the Hadamard (or entrywise) product of x and y, where
-    x and y may be real vectors or matrices having the same shape.
-    The imaginary parts are ignored.
+    x and y are real vectors having the same size.
 
-    The code uses numba with automatic parallelization.
+    The code uses numba vectorize with parallelization.
 
     Parameters
     ----------
     x, y : arrays
-        Real vectors or matrices having the same shape.
-
-    check_input : boolean
-        If True, verify if the input is valid. Default is True.
+        Real vectors having the same size.
 
     Returns
     -------
     result : array
         Hadamard product of x and y.
     '''
-    if check_input is True:
-        assert x.shape == y.shape, 'x and y must have the same shape'
-        assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
-or matrices'
-
-    result = np.empty_like(x)
-    if x.ndim == 1:
-        result[:] = 0
-        for i in prange(x.shape[0]):
-            # the '.real' forces the code to use
-            # only the real part of the arrays
-            result[i] += x.real[i]*y.real[i]
-    else:
-        result[:,:] = 0
-        for i in prange(x.shape[0]):
-            for j in range(x.shape[1]):
-                # the '.real' forces the code to use
-                # only the real part of the arrays
-                result[i,j] += x.real[i,j]*y.real[i,j]
+    result = x*y
 
     return result
+
+
+@guvectorize('float64[:,:], float64[:,:], float64[:,:]',
+             '(m,n),(m,n)->(m,n)', target='parallel')
+def hadamard_real_mat_par(x, y, result):
+    '''
+    Compute the Hadamard (or entrywise) product of x and y, where
+    x and y are real matrices having the same shape.
+
+    The code uses numba guvectorize with parallelization.
+
+    Parameters
+    ----------
+    x, y : arrays
+        Real matrices used to compute the Hadamard product.
+    result : array
+        Real matrx used to store the computed Hadamard product.
+
+    Returns
+    -------
+    result : array
+        Hadamard product of x and y.
+    '''
+
+    for i in range(x.shape[0]):
+        for j in range(x.shape[1]):
+            result[i,j] = x[i,j]*y[i,j]
 
 
 def hadamard_complex(x, y, function='numba'):
@@ -466,8 +438,7 @@ def hadamard_complex(x, y, function='numba'):
     hadamard_real = {
         'dumb': hadamard_real_dumb,
         'numpy': hadamard_real_numpy,
-        'numba': hadamard_real_numba,
-        'parallel': hadamard_real_parallel
+        'numba': hadamard_real_numba
     }
     if function not in hadamard_real:
         raise ValueError("Function {} not recognized".format(function))
@@ -507,8 +478,7 @@ def outer_real_dumb(x, y, check_input=True):
     if check_input is True:
         assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
 
-    result = np.empty((x.size, y.size))
-    result[:,:] = 0
+    result = np.zeros((x.size, y.size))
     for i in range(x.size):
         # the '.real' forces the code to use
         # only the real part of the arrays
@@ -540,8 +510,7 @@ def outer_real_dumb(x, y, check_input=True):
     if check_input is True:
         assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
 
-    result = np.empty((x.size, y.size))
-    result[:,:] = 0
+    result = np.zeros((x.size, y.size))
     for i in range(x.size):
         # the '.real' forces the code to use
         # only the real part of the arrays
@@ -550,7 +519,8 @@ def outer_real_dumb(x, y, check_input=True):
     return result
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
+@njit
 def outer_real_numba(x, y, check_input=True):
     '''
     Compute the outer product of x and y, where
@@ -574,12 +544,46 @@ def outer_real_numba(x, y, check_input=True):
     if check_input is True:
         assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
 
-    result = np.empty((x.size, y.size))
-    result[:,:] = 0
+    result = np.zeros((x.size, y.size))
     for i in range(x.size):
-        # the '.real' forces the code to use
-        # only the real part of the arrays
-        result[i] += x.real[i]*y.real
+        for j in range(y.size):
+            # the '.real' forces the code to use
+            # only the real part of the arrays
+            result[i,j] += x.real[i]*y.real[j]
+
+    return result
+
+
+@njit(parallel=True)
+def outer_real_parallel(x, y, check_input=True):
+    '''
+    Compute the outer product of x and y, where
+    x in R^N and y in R^M. The imaginary parts are ignored.
+
+    The code uses numba.
+
+    Parameters
+    ----------
+    x, y : arrays 1D
+        Vectors with real elements.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array 2d
+        Outer product of x and y.
+    '''
+    if check_input is True:
+        assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+
+    result = np.zeros((x.size, y.size))
+    for i in prange(x.size):
+        for j in range(y.size):
+            # the '.real' forces the code to use
+            # only the real part of the arrays
+            result[i,j] += x.real[i]*y.real[j]
 
     return result
 
