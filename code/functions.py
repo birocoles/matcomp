@@ -425,11 +425,13 @@ def outer_real_dumb(x, y, check_input=True):
     if check_input is True:
         assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
 
-    result = np.zeros((x.size, y.size))
+    #result = np.zeros((x.size, y.size))
+    result = np.empty((x.size, y.size))
     for i in range(x.size):
-        # the '.real' forces the code to use
-        # only the real part of the arrays
-        result[i,:] += x.real[i]*y.real
+        for j in range(y.size):
+            # the '.real' forces the code to use
+            # only the real part of the arrays
+            result[i,j] = x.real[i]*y.real[j]
 
     return result
 
@@ -460,7 +462,7 @@ def outer_real_numpy(x, y, check_input=True):
 
     # the '.real' forces the code to use
     # only the real part of the arrays
-    result = x.real[:, np.newaxis]*y.real
+    result = x.real[:, np.newaxis]*y.real[np.newaxis,:]
 
     return result
 
@@ -490,12 +492,12 @@ def outer_real_numba(x, y, check_input=True):
     if check_input is True:
         assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
 
-    result = np.zeros((x.size, y.size))
+    result = np.empty((x.size, y.size))
     for i in range(x.size):
         for j in range(y.size):
             # the '.real' forces the code to use
             # only the real part of the arrays
-            result[i,j] += x.real[i]*y.real[j]
+            result[i,j] = x.real[i]*y.real[j]
 
     return result
 
