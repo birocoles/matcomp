@@ -266,18 +266,18 @@ def hadamard_real_dumb(x, y, check_input=True):
         assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
 or matrices'
 
-    result = np.zeros_like(x)
+    result = np.empty_like(x)
     if x.ndim == 1:
         for i in range(x.shape[0]):
             # the '.real' forces the code to use
             # only the real part of the arrays
-            result[i] += x.real[i]*y.real[i]
+            result[i] = x.real[i]*y.real[i]
     else:
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 # the '.real' forces the code to use
                 # only the real part of the arrays
-                result[i,j] += x.real[i,j]*y.real[i,j]
+                result[i,j] = x.real[i,j]*y.real[i,j]
 
     return result
 
@@ -343,18 +343,18 @@ def hadamard_real_numba(x, y, check_input=True):
         assert (x.ndim == 1) or (x.ndim == 2), 'x and y must be vectors \
 or matrices'
 
-    result = np.zeros_like(x)
+    result = np.empty_like(x)
     if x.ndim == 1:
         for i in range(x.shape[0]):
             # the '.real' forces the code to use
             # only the real part of the arrays
-            result[i] += x.real[i]*y.real[i]
+            result[i] = x.real[i]*y.real[i]
     else:
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 # the '.real' forces the code to use
                 # only the real part of the arrays
-                result[i,j] += x.real[i,j]*y.real[i,j]
+                result[i,j] = x.real[i,j]*y.real[i,j]
 
     return result
 
