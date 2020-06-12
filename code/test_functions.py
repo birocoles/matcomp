@@ -13,7 +13,6 @@ def test_dot_real_not_1D_arrays():
         fcs.dot_real_dumb(vector_1, vector_2)
         fcs.dot_real_numpy(vector_1, vector_2)
         fcs.dot_real_numba(vector_1, vector_2)
-        fcs.dot_real_parallel(vector_1, vector_2)
 
 
 def test_dot_real_different_sizes():
@@ -24,7 +23,6 @@ def test_dot_real_different_sizes():
         fcs.dot_real_dumb(vector_1, vector_2)
         fcs.dot_real_numpy(vector_1, vector_2)
         fcs.dot_real_numba(vector_1, vector_2)
-        fcs.dot_real_parallel(vector_1, vector_2)
 
 
 def test_dot_real_known_values():
@@ -35,11 +33,9 @@ def test_dot_real_known_values():
     computed_output_dumb = fcs.dot_real_dumb(vector_1, vector_2)
     computed_output_numpy = fcs.dot_real_numpy(vector_1, vector_2)
     computed_output_numba = fcs.dot_real_numba(vector_1, vector_2)
-    computed_output_parallel = fcs.dot_real_parallel(vector_1, vector_2)
     aae(reference_output, computed_output_dumb, decimal=10)
     aae(reference_output, computed_output_numpy, decimal=10)
     aae(reference_output, computed_output_numba, decimal=10)
-    aae(reference_output, computed_output_parallel, decimal=10)
 
 
 def test_dot_real_compare_numpy_dot():
@@ -51,11 +47,9 @@ def test_dot_real_compare_numpy_dot():
     computed_output_dumb = fcs.dot_real_dumb(vector_1, vector_2)
     computed_output_numpy = fcs.dot_real_numpy(vector_1, vector_2)
     computed_output_numba = fcs.dot_real_numba(vector_1, vector_2)
-    computed_output_parallel = fcs.dot_real_parallel(vector_1, vector_2)
     aae(reference_output_numpy, computed_output_dumb, decimal=10)
     aae(reference_output_numpy, computed_output_numpy, decimal=10)
     aae(reference_output_numpy, computed_output_numba, decimal=10)
-    aae(reference_output_numpy, computed_output_parallel, decimal=10)
 
 
 def test_dot_real_commutativity():
@@ -70,12 +64,9 @@ def test_dot_real_commutativity():
     output_ba_numpy = fcs.dot_real_numpy(b, a)
     output_ab_numba = fcs.dot_real_numba(a, b)
     output_ba_numba = fcs.dot_real_numba(b, a)
-    output_ab_parallel = fcs.dot_real_parallel(a, b)
-    output_ba_parallel = fcs.dot_real_parallel(b, a)
     aae(output_ab_dumb, output_ba_dumb, decimal=10)
     aae(output_ab_numpy, output_ba_numpy, decimal=10)
     aae(output_ab_numba, output_ba_numba, decimal=10)
-    aae(output_ab_parallel, output_ba_parallel, decimal=10)
 
 
 def test_dot_real_distributivity():
@@ -91,12 +82,9 @@ def test_dot_real_distributivity():
     output_ab_ac_numpy = fcs.dot_real_numpy(a, b) + fcs.dot_real_numpy(a, c)
     output_a_bc_numba = fcs.dot_real_numba(a, b + c)
     output_ab_ac_numba = fcs.dot_real_numba(a, b) + fcs.dot_real_numba(a, c)
-    output_a_bc_parallel = fcs.dot_real_parallel(a, b + c)
-    output_ab_ac_parallel = fcs.dot_real_parallel(a, b) + fcs.dot_real_parallel(a, c)
     aae(output_a_bc_dumb, output_ab_ac_dumb, decimal=10)
     aae(output_a_bc_numpy, output_ab_ac_numpy, decimal=10)
     aae(output_a_bc_numba, output_ab_ac_numba, decimal=10)
-    aae(output_a_bc_parallel, output_ab_ac_parallel, decimal=10)
 
 
 def test_dot_real_scalar_multiplication():
@@ -113,12 +101,9 @@ def test_dot_real_scalar_multiplication():
     output_c1c2_ab_numpy = c1*c2*fcs.dot_real_numpy(a, b)
     output_c1a_c2b_numba = fcs.dot_real_numba(c1*a, c2*b)
     output_c1c2_ab_numba = c1*c2*fcs.dot_real_numba(a, b)
-    output_c1a_c2b_parallel = fcs.dot_real_parallel(c1*a, c2*b)
-    output_c1c2_ab_parallel = c1*c2*fcs.dot_real_parallel(a, b)
     aae(output_c1a_c2b_dumb, output_c1c2_ab_dumb, decimal=10)
     aae(output_c1a_c2b_numpy, output_c1c2_ab_numpy, decimal=10)
     aae(output_c1a_c2b_numba, output_c1c2_ab_numba, decimal=10)
-    aae(output_c1a_c2b_parallel, output_c1c2_ab_parallel, decimal=10)
 
 
 def test_dot_complex_functions_compare_numpy_dot():
@@ -145,12 +130,10 @@ def test_dot_complex_compare_numpy_dot():
     output_dumb = fcs.dot_complex(vector_1, vector_2, function='dumb')
     output_numpy = fcs.dot_complex(vector_1, vector_2, function='numpy')
     output_numba = fcs.dot_complex(vector_1, vector_2, function='numba')
-    output_parallel = fcs.dot_complex(vector_1, vector_2, function='parallel')
     output_numpy_dot = np.dot(vector_1, vector_2)
     aae(output_dumb, output_numpy_dot, decimal=10)
     aae(output_numpy, output_numpy_dot, decimal=10)
     aae(output_numba, output_numpy_dot, decimal=10)
-    aae(output_parallel, output_numpy_dot, decimal=10)
 
 
 def test_dot_complex_compare_numpy_vdot():
@@ -165,13 +148,10 @@ def test_dot_complex_compare_numpy_vdot():
                                    conjugate=True, function='numpy')
     output_numba = fcs.dot_complex(vector_1, vector_2,
                                    conjugate=True, function='numba')
-    output_parallel = fcs.dot_complex(vector_1, vector_2,
-                                      conjugate=True, function='parallel')
     output_numpy_dot = np.vdot(vector_1, vector_2)
     aae(output_dumb, output_numpy_dot, decimal=10)
     aae(output_numpy, output_numpy_dot, decimal=10)
     aae(output_numba, output_numpy_dot, decimal=10)
-    aae(output_parallel, output_numpy_dot, decimal=10)
 
 
 def test_dot_complex_invalid_function():
@@ -192,7 +172,6 @@ def test_hadamard_real_different_shapes():
         fcs.hadamard_real_dumb(a, B)
         fcs.hadamard_real_numpy(a, B)
         fcs.hadamard_real_numba(a, B)
-        fcs.hadamard_real_parallel(a, B)
 
 
 def test_hadamard_real_compare_asterisk():
@@ -204,12 +183,10 @@ def test_hadamard_real_compare_asterisk():
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
     output_numpy = fcs.hadamard_real_numba(input1, input2)
     output_numba = fcs.hadamard_real_numba(input1, input2)
-    output_parallel = fcs.hadamard_real_parallel(input1, input2)
     output_asterisk = input1*input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
-    aae(output_parallel, output_asterisk, decimal=10)
     # for matrices
     np.random.seed = 9
     input1 = np.random.rand(5, 7)
@@ -217,12 +194,10 @@ def test_hadamard_real_compare_asterisk():
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
     output_numpy = fcs.hadamard_real_numba(input1, input2)
     output_numba = fcs.hadamard_real_numba(input1, input2)
-    output_parallel = fcs.hadamard_real_parallel(input1, input2)
     output_asterisk = input1*input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
-    aae(output_parallel, output_asterisk, decimal=10)
 
 
 def test_hadamard_complex_compare_asterisk():
@@ -234,12 +209,10 @@ def test_hadamard_complex_compare_asterisk():
     output_dumb = fcs.hadamard_complex(input1, input2, function='dumb')
     output_numpy = fcs.hadamard_complex(input1, input2, function='numpy')
     output_numba = fcs.hadamard_complex(input1, input2, function='numba')
-    output_parallel = fcs.hadamard_complex(input1, input2, function='parallel')
     output_asterisk = input1*input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
-    aae(output_parallel, output_asterisk, decimal=10)
 
 
 def test_hadamard_complex_invalid_function():
@@ -249,7 +222,142 @@ def test_hadamard_complex_invalid_function():
     with pytest.raises(ValueError):
         fcs.hadamard_complex(vector_1, vector_2, function='not_valid_function')
 
+# Outer product
 
+def test_outer_real_input_not_vector():
+    'fail with non-vector inputs'
+    a = np.linspace(5,10,8)
+    B = np.ones((4,4))
+    with pytest.raises(AssertionError):
+        fcs.outer_real_dumb(a, B)
+        fcs.outer_real_numpy(a, B)
+        fcs.outer_real_numba(a, B)
+
+
+def test_outer_real_compare_numpy_outer():
+    'compare with numpy.outer'
+    np.random.seed = 301
+    vector_1 = np.random.rand(13)
+    vector_2 = np.random.rand(13)
+    reference_output_numpy = np.outer(vector_1, vector_2)
+    computed_output_dumb = fcs.outer_real_dumb(vector_1, vector_2)
+    computed_output_numpy = fcs.outer_real_numpy(vector_1, vector_2)
+    computed_output_numba = fcs.outer_real_numba(vector_1, vector_2)
+    aae(reference_output_numpy, computed_output_dumb, decimal=10)
+    aae(reference_output_numpy, computed_output_numpy, decimal=10)
+    aae(reference_output_numpy, computed_output_numba, decimal=10)
+
+
+def test_outer_real_known_values():
+    'check output produced by specific input'
+    vector_1 = np.ones(5)
+    vector_2 = np.arange(1,11)
+    reference_output = np.resize(vector_2, (vector_1.size, vector_2.size))
+    computed_output_dumb = fcs.outer_real_dumb(vector_1, vector_2)
+    computed_output_numpy = fcs.outer_real_numpy(vector_1, vector_2)
+    computed_output_numba = fcs.outer_real_numba(vector_1, vector_2)
+    aae(reference_output, computed_output_dumb, decimal=10)
+    aae(reference_output, computed_output_numpy, decimal=10)
+    aae(reference_output, computed_output_numba, decimal=10)
+
+
+def test_outer_real_transposition():
+    'verify the transposition property'
+    np.random.seed = 72
+    a = np.random.rand(8)
+    b = np.random.rand(5)
+    a_outer_b_T_dumb = fcs.outer_real_dumb(a, b).T
+    b_outer_a_dumb = fcs.outer_real_dumb(b, a)
+    a_outer_b_T_numpy = fcs.outer_real_numpy(a, b).T
+    b_outer_a_numpy = fcs.outer_real_numpy(b, a)
+    a_outer_b_T_numba = fcs.outer_real_numba(a, b).T
+    b_outer_a_numba = fcs.outer_real_numba(b, a)
+    aae(a_outer_b_T_dumb, b_outer_a_dumb, decimal=10)
+    aae(a_outer_b_T_numpy, b_outer_a_numpy, decimal=10)
+    aae(a_outer_b_T_numba, b_outer_a_numba, decimal=10)
+
+
+def test_outer_real_distributivity():
+    'verify the distributivity property'
+    np.random.seed = 72
+    a = np.random.rand(5)
+    b = np.random.rand(5)
+    c = np.random.rand(4)
+    a_plus_b_outer_c_dumb = fcs.outer_real_dumb(a+b, c)
+    a_outer_c_plus_b_outer_c_dumb = fcs.outer_real_dumb(a, c) + \
+                                    fcs.outer_real_dumb(b, c)
+    a_plus_b_outer_c_numpy = fcs.outer_real_numpy(a+b, c)
+    a_outer_c_plus_b_outer_c_numpy = fcs.outer_real_numpy(a, c) + \
+                                     fcs.outer_real_numpy(b, c)
+    a_plus_b_outer_c_numba = fcs.outer_real_numba(a+b, c)
+    a_outer_c_plus_b_outer_c_numba = fcs.outer_real_numba(a, c) + \
+                                     fcs.outer_real_numba(b, c)
+    aae(a_plus_b_outer_c_dumb, a_outer_c_plus_b_outer_c_dumb, decimal=10)
+    aae(a_plus_b_outer_c_numpy, a_outer_c_plus_b_outer_c_numpy, decimal=10)
+    aae(a_plus_b_outer_c_numba, a_outer_c_plus_b_outer_c_numba, decimal=10)
+
+
+def test_outer_real_scalar_multiplication():
+    'verify scalar multiplication property'
+    np.random.seed = 2
+    a = np.random.rand(3)
+    b = np.random.rand(6)
+    c = 3.4
+    ca_outer_b_dumb = fcs.outer_real_dumb(c*a, b)
+    a_outer_cb_dumb = fcs.outer_real_dumb(a, c*b)
+    ca_outer_b_numpy = fcs.outer_real_numpy(c*a, b)
+    a_outer_cb_numpy = fcs.outer_real_numpy(a, c*b)
+    ca_outer_b_numba = fcs.outer_real_numba(c*a, b)
+    a_outer_cb_numba = fcs.outer_real_numba(a, c*b)
+    aae(ca_outer_b_dumb, a_outer_cb_dumb, decimal=10)
+    aae(ca_outer_b_numpy, a_outer_cb_numpy, decimal=10)
+    aae(ca_outer_b_numba, a_outer_cb_numba, decimal=10)
+
+
+def test_outer_complex_invalid_function():
+    'fail due to invalid function'
+    vector_1 = np.ones(3)
+    vector_2 = np.arange(4)
+    with pytest.raises(ValueError):
+        fcs.outer_complex(vector_1, vector_2, function='not_valid_function')
+
+
+def test_outer_complex_compare_numpy_outer():
+    'compare hadamard_complex function with * operator'
+    # for matrices
+    np.random.seed = 21
+    input1 = np.random.rand(7) + 1j*np.random.rand(7)
+    input2 = np.random.rand(7) + 1j*np.random.rand(7)
+    output_dumb = fcs.outer_complex(input1, input2, function='dumb')
+    output_numpy = fcs.outer_complex(input1, input2, function='numpy')
+    output_numba = fcs.outer_complex(input1, input2, function='numba')
+    output_numpy_outer = np.outer(input1, input2)
+    aae(output_dumb, output_numpy_outer, decimal=10)
+    aae(output_numpy, output_numpy_outer, decimal=10)
+    aae(output_numba, output_numpy_outer, decimal=10)
+
+
+### matrix-vector product
+
+def test_matvec_real_input_dont_match():
+    'fail when matrix columns dont match vector size'
+    A = np.ones((5,4))
+    x = np.ones(3)
+    with pytest.raises(AssertionError):
+        fcs.matvec_real_dumb(A, x)
+        fcs.matvec_real_numba(A, x)
+
+
+def test_matvec_real_functions_compare_numpy_dot():
+    'compare matvec_real_XXXX with numpy.dot'
+    np.random.seed = 24
+    matrix = np.random.rand(3,4)
+    vector = np.random.rand(4)
+    output_dumb = fcs.matvec_real_dumb(matrix, vector)
+    output_numba = fcs.matvec_real_dumb(matrix, vector)
+    output_numpy_dot = np.dot(matrix, vector)
+    aae(output_dumb, output_numpy_dot, decimal=10)
+    aae(output_numba, output_numpy_dot, decimal=10)
 
 
 # Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)
