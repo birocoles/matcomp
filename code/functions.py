@@ -1,5 +1,5 @@
 import numpy as np
-from numba import njit, prange, vectorize, guvectorize
+from numba import njit, prange, vectorize, guvectorize, cfunc, types, carray
 
 # dot product
 
