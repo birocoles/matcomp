@@ -359,59 +359,6 @@ or matrices'
     return result
 
 
-@vectorize(['int32(int32, int32)',
-            'int64(int64, int64)',
-            'float32(float32, float32)',
-            'float64(float64, float64)'], target='parallel')
-def hadamard_real_vec_par(x, y):
-    '''
-    Compute the Hadamard (or entrywise) product of x and y, where
-    x and y are real vectors having the same size.
-
-    The code uses numba vectorize with parallelization.
-
-    Parameters
-    ----------
-    x, y : arrays
-        Real vectors having the same size.
-
-    Returns
-    -------
-    result : array
-        Hadamard product of x and y.
-    '''
-    result = x*y
-
-    return result
-
-
-@guvectorize('float64[:,:], float64[:,:], float64[:,:]',
-             '(m,n),(m,n)->(m,n)', target='parallel')
-def hadamard_real_mat_par(x, y, result):
-    '''
-    Compute the Hadamard (or entrywise) product of x and y, where
-    x and y are real matrices having the same shape.
-
-    The code uses numba guvectorize with parallelization.
-
-    Parameters
-    ----------
-    x, y : arrays
-        Real matrices used to compute the Hadamard product.
-    result : array
-        Real matrx used to store the computed Hadamard product.
-
-    Returns
-    -------
-    result : array
-        Hadamard product of x and y.
-    '''
-
-    for i in range(x.shape[0]):
-        for j in range(x.shape[1]):
-            result[i,j] = x[i,j]*y[i,j]
-
-
 def hadamard_complex(x, y, function='numba'):
     '''
     Compute the Hadamard (or entrywise) product of x and y, where
@@ -487,12 +434,13 @@ def outer_real_dumb(x, y, check_input=True):
     return result
 
 
-def outer_real_dumb(x, y, check_input=True):
+def outer_real_numpy(x, y, check_input=True):
     '''
     Compute the outer product of x and y, where
     x in R^N and y in R^M. The imaginary parts are ignored.
 
-    The code uses a simple "for" to iterate on the arrays.
+    The code uses numpy.newaxis for broadcasting
+    https://numpy.org/devdocs/user/theory.broadcasting.html
 
     Parameters
     ----------
@@ -510,11 +458,9 @@ def outer_real_dumb(x, y, check_input=True):
     if check_input is True:
         assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
 
-    result = np.zeros((x.size, y.size))
-    for i in range(x.size):
-        # the '.real' forces the code to use
-        # only the real part of the arrays
-        result[i,:] += x.real[i]*y.real
+    # the '.real' forces the code to use
+    # only the real part of the arrays
+    result = x.real[:, np.newaxis]*y.real
 
     return result
 
@@ -554,72 +500,122 @@ def outer_real_numba(x, y, check_input=True):
     return result
 
 
-@njit(parallel=True)
-def outer_real_parallel(x, y, check_input=True):
+def outer_complex(x, y, function='numba'):
     '''
-    Compute the outer product of x and y, where
-    x in R^N and y in R^M. The imaginary parts are ignored.
-
-    The code uses numba.
+    Compute the outer product of x and y, where x and y are complex vectors.
 
     Parameters
     ----------
-    x, y : arrays 1D
-        Vectors with real elements.
+    x, y : 1D arrays
+        Complex vectors.
+
+    function : string
+        Function to be used for computing the real outer product.
+        The function name must be 'dumb', 'numpy' or 'numba'.
+        Default is 'numba'.
+
+    Returns
+    -------
+    result : 2D array
+        Outer product of x and y.
+    '''
+    assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+
+    outer_real = {
+        'dumb': outer_real_dumb,
+        'numpy': outer_real_numpy,
+        'numba': outer_real_numba
+    }
+    if function not in outer_real:
+        raise ValueError("Function {} not recognized".format(function))
+
+    result_real = outer_real[function](x.real, y.real, check_input=False)
+    result_real -= outer_real[function](x.imag, y.imag, check_input=False)
+    result_imag = outer_real[function](x.real, y.imag, check_input=False)
+    result_imag += outer_real[function](x.imag, y.real, check_input=False)
+
+    result = result_real + 1j*result_imag
+
+    return result
+
+
+# matrix-vector product
+
+def matvec_real_dumb(A, x, check_input=True):
+    '''
+    Compute the matrix-vector product of A and x, where
+    A in R^NxM and x in R^M. The imaginary parts are ignored.
+
+    The code uses a simple doubly nested "for" to iterate on the arrays.
+
+    Parameters
+    ----------
+    A : array 2D
+        NxM matrix with real elements.
+
+    x : array 1D
+        Real vector witn M elements.
 
     check_input : boolean
         If True, verify if the input is valid. Default is True.
 
     Returns
     -------
-    result : array 2d
-        Outer product of x and y.
+    result : array 1D
+        Product of A and x.
     '''
     if check_input is True:
-        assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
+        assert (A.ndim == 2) and (x.ndim == 1), 'A and x must be 2D and 1D \
+arrays, respectively'
+        assert A.shape[1] == x.size, 'A and x do not match'
 
-    result = np.zeros((x.size, y.size))
-    for i in prange(x.size):
-        for j in range(y.size):
+    result = np.zeros(A.shape[0])
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
             # the '.real' forces the code to use
             # only the real part of the arrays
-            result[i,j] += x.real[i]*y.real[j]
+            result[i] += A.real[i,j]*x.real[j]
 
     return result
 
 
+@njit
+def matvec_real_numba(A, x, check_input=True):
+    '''
+    Compute the matrix-vector product of A and x, where
+    A in R^NxM and x in R^M. The imaginary parts are ignored.
 
-# def outer_real_dumb(x, y, check_input=True):
-#     '''
-#     Compute the dot product of x and y, where
-#     x, y are elements of R^N. The imaginary parts are ignored.
-#
-#     The code uses a simple "for" to iterate on the arrays.
-#
-#     Parameters
-#     ----------
-#     x, y : arrays 1D
-#         Vectors with N elements.
-#
-#     check_input : boolean
-#         If True, verify if the input is valid. Default is True.
-#
-#     Returns
-#     -------
-#     result : scalar
-#         Dot product of x and y.
-#     '''
-#     if check_input is True:
-#         assert x.ndim == y.ndim == 1, 'x and y must be 1D arrays'
-#         assert x.size == y.size, 'x and y must have the same size'
-#
-#     result = 0
-#     for i in range(x.size):
-#         # the '.real' forces the code to use
-#         # only the real part of the arrays
-#         result += x.real[i]*y.real[i]
-#
-#     return result
+    The code uses numba jit.
+
+    Parameters
+    ----------
+    A : array 2D
+        NxM matrix with real elements.
+
+    x : array 1D
+        Real vector witn M elements.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    result : array 1D
+        Product of A and x.
+    '''
+    if check_input is True:
+        assert (A.ndim == 2) and (x.ndim == 1), 'A and x must be 2D and 1D \
+arrays, respectively'
+        assert A.shape[1] == x.size, 'A and x do not match'
+
+    result = np.zeros(A.shape[0])
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            # the '.real' forces the code to use
+            # only the real part of the arrays
+            result[i] += A.real[i,j]*x.real[j]
+
+    return result
 
 
 # Fourier Transform

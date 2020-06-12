@@ -183,12 +183,10 @@ def test_hadamard_real_compare_asterisk():
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
     output_numpy = fcs.hadamard_real_numba(input1, input2)
     output_numba = fcs.hadamard_real_numba(input1, input2)
-    output_vec_par = fcs.hadamard_real_vec_par(input1, input2)
     output_asterisk = input1*input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
-    aae(output_vec_par, output_asterisk, decimal=10)
     # for matrices
     np.random.seed = 9
     input1 = np.random.rand(5, 7)
@@ -196,12 +194,10 @@ def test_hadamard_real_compare_asterisk():
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
     output_numpy = fcs.hadamard_real_numba(input1, input2)
     output_numba = fcs.hadamard_real_numba(input1, input2)
-    output_mat_par = fcs.hadamard_real_mat_par(input1, input2)
     output_asterisk = input1*input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
-    aae(output_mat_par, output_asterisk, decimal=10)
 
 
 def test_hadamard_complex_compare_asterisk():
@@ -234,6 +230,7 @@ def test_outer_real_input_not_vector():
     B = np.ones((4,4))
     with pytest.raises(AssertionError):
         fcs.outer_real_dumb(a, B)
+        fcs.outer_real_numpy(a, B)
         fcs.outer_real_numba(a, B)
 
 
@@ -244,8 +241,10 @@ def test_outer_real_compare_numpy_outer():
     vector_2 = np.random.rand(13)
     reference_output_numpy = np.outer(vector_1, vector_2)
     computed_output_dumb = fcs.outer_real_dumb(vector_1, vector_2)
+    computed_output_numpy = fcs.outer_real_numpy(vector_1, vector_2)
     computed_output_numba = fcs.outer_real_numba(vector_1, vector_2)
     aae(reference_output_numpy, computed_output_dumb, decimal=10)
+    aae(reference_output_numpy, computed_output_numpy, decimal=10)
     aae(reference_output_numpy, computed_output_numba, decimal=10)
 
 
@@ -255,8 +254,10 @@ def test_outer_real_known_values():
     vector_2 = np.arange(1,11)
     reference_output = np.resize(vector_2, (vector_1.size, vector_2.size))
     computed_output_dumb = fcs.outer_real_dumb(vector_1, vector_2)
+    computed_output_numpy = fcs.outer_real_numpy(vector_1, vector_2)
     computed_output_numba = fcs.outer_real_numba(vector_1, vector_2)
     aae(reference_output, computed_output_dumb, decimal=10)
+    aae(reference_output, computed_output_numpy, decimal=10)
     aae(reference_output, computed_output_numba, decimal=10)
 
 
@@ -267,9 +268,12 @@ def test_outer_real_transposition():
     b = np.random.rand(5)
     a_outer_b_T_dumb = fcs.outer_real_dumb(a, b).T
     b_outer_a_dumb = fcs.outer_real_dumb(b, a)
+    a_outer_b_T_numpy = fcs.outer_real_numpy(a, b).T
+    b_outer_a_numpy = fcs.outer_real_numpy(b, a)
     a_outer_b_T_numba = fcs.outer_real_numba(a, b).T
     b_outer_a_numba = fcs.outer_real_numba(b, a)
     aae(a_outer_b_T_dumb, b_outer_a_dumb, decimal=10)
+    aae(a_outer_b_T_numpy, b_outer_a_numpy, decimal=10)
     aae(a_outer_b_T_numba, b_outer_a_numba, decimal=10)
 
 
@@ -282,10 +286,14 @@ def test_outer_real_distributivity():
     a_plus_b_outer_c_dumb = fcs.outer_real_dumb(a+b, c)
     a_outer_c_plus_b_outer_c_dumb = fcs.outer_real_dumb(a, c) + \
                                     fcs.outer_real_dumb(b, c)
+    a_plus_b_outer_c_numpy = fcs.outer_real_numpy(a+b, c)
+    a_outer_c_plus_b_outer_c_numpy = fcs.outer_real_numpy(a, c) + \
+                                     fcs.outer_real_numpy(b, c)
     a_plus_b_outer_c_numba = fcs.outer_real_numba(a+b, c)
     a_outer_c_plus_b_outer_c_numba = fcs.outer_real_numba(a, c) + \
                                      fcs.outer_real_numba(b, c)
     aae(a_plus_b_outer_c_dumb, a_outer_c_plus_b_outer_c_dumb, decimal=10)
+    aae(a_plus_b_outer_c_numpy, a_outer_c_plus_b_outer_c_numpy, decimal=10)
     aae(a_plus_b_outer_c_numba, a_outer_c_plus_b_outer_c_numba, decimal=10)
 
 
@@ -297,11 +305,59 @@ def test_outer_real_scalar_multiplication():
     c = 3.4
     ca_outer_b_dumb = fcs.outer_real_dumb(c*a, b)
     a_outer_cb_dumb = fcs.outer_real_dumb(a, c*b)
+    ca_outer_b_numpy = fcs.outer_real_numpy(c*a, b)
+    a_outer_cb_numpy = fcs.outer_real_numpy(a, c*b)
     ca_outer_b_numba = fcs.outer_real_numba(c*a, b)
     a_outer_cb_numba = fcs.outer_real_numba(a, c*b)
     aae(ca_outer_b_dumb, a_outer_cb_dumb, decimal=10)
+    aae(ca_outer_b_numpy, a_outer_cb_numpy, decimal=10)
     aae(ca_outer_b_numba, a_outer_cb_numba, decimal=10)
 
+
+def test_outer_complex_invalid_function():
+    'fail due to invalid function'
+    vector_1 = np.ones(3)
+    vector_2 = np.arange(4)
+    with pytest.raises(ValueError):
+        fcs.outer_complex(vector_1, vector_2, function='not_valid_function')
+
+
+def test_outer_complex_compare_numpy_outer():
+    'compare hadamard_complex function with * operator'
+    # for matrices
+    np.random.seed = 21
+    input1 = np.random.rand(7) + 1j*np.random.rand(7)
+    input2 = np.random.rand(7) + 1j*np.random.rand(7)
+    output_dumb = fcs.outer_complex(input1, input2, function='dumb')
+    output_numpy = fcs.outer_complex(input1, input2, function='numpy')
+    output_numba = fcs.outer_complex(input1, input2, function='numba')
+    output_numpy_outer = np.outer(input1, input2)
+    aae(output_dumb, output_numpy_outer, decimal=10)
+    aae(output_numpy, output_numpy_outer, decimal=10)
+    aae(output_numba, output_numpy_outer, decimal=10)
+
+
+### matrix-vector product
+
+def test_matvec_real_input_dont_match():
+    'fail when matrix columns dont match vector size'
+    A = np.ones((5,4))
+    x = np.ones(3)
+    with pytest.raises(AssertionError):
+        fcs.matvec_real_dumb(A, x)
+        fcs.matvec_real_numba(A, x)
+
+
+def test_matvec_real_functions_compare_numpy_dot():
+    'compare matvec_real_XXXX with numpy.dot'
+    np.random.seed = 24
+    matrix = np.random.rand(3,4)
+    vector = np.random.rand(4)
+    output_dumb = fcs.matvec_real_dumb(matrix, vector)
+    output_numba = fcs.matvec_real_dumb(matrix, vector)
+    output_numpy_dot = np.dot(matrix, vector)
+    aae(output_dumb, output_numpy_dot, decimal=10)
+    aae(output_numba, output_numpy_dot, decimal=10)
 
 
 # Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)
