@@ -398,25 +398,47 @@ def test_outer_complex_compare_numpy_outer():
 
 ### matrix-vector product
 
-# def test_matvec_real_input_dont_match():
-#     'fail when matrix columns dont match vector size'
-#     A = np.ones((5,4))
-#     x = np.ones(3)
-#     with pytest.raises(AssertionError):
-#         fcs.matvec_real_dumb(A, x)
-#         fcs.matvec_real_numba(A, x)
-#
-#
-# def test_matvec_real_functions_compare_numpy_dot():
-#     'compare matvec_real_XXXX with numpy.dot'
-#     np.random.seed = 24
-#     matrix = np.random.rand(3,4)
-#     vector = np.random.rand(4)
-#     output_dumb = fcs.matvec_real_dumb(matrix, vector)
-#     output_numba = fcs.matvec_real_dumb(matrix, vector)
-#     output_numpy_dot = np.dot(matrix, vector)
-#     aae(output_dumb, output_numpy_dot, decimal=10)
-#     aae(output_numba, output_numpy_dot, decimal=10)
+def test_matvec_real_input_doesnt_match():
+    'fail when matrix columns doesnt match vector size'
+    A = np.ones((5,4))
+    x = np.ones(3)
+    with pytest.raises(AssertionError):
+        fcs.matvec_real_dumb(A, x)
+        fcs.matvec_real_numba(A, x)
+        fcs.matvec_real_dot(A, x)
+        fcs.matvec_real_columns(A, x)
+
+
+def test_matvec_real_functions_compare_numpy_dot():
+    'compare matvec_real_XXXX with numpy.dot'
+    np.random.seed = 24
+    matrix = np.random.rand(3,4)
+    vector = np.random.rand(4)
+    output_dumb = fcs.matvec_real_dumb(matrix, vector)
+    output_numba = fcs.matvec_real_numba(matrix, vector)
+    output_dot = fcs.matvec_real_dot(matrix, vector)
+    output_columns = fcs.matvec_real_columns(matrix, vector)
+    output_numpy_dot = np.dot(matrix, vector)
+    aae(output_dumb, output_numpy_dot, decimal=10)
+    aae(output_numba, output_numpy_dot, decimal=10)
+    aae(output_dot, output_numpy_dot, decimal=10)
+    aae(output_columns, output_numpy_dot, decimal=10)
+
+
+def test_matvec_complex_compare_numpy_dot():
+    'compare matvec_complex with numpy.dot'
+    np.random.seed = 98
+    matrix = np.random.rand(3,4) + 1j*np.random.rand(3,4)
+    vector = np.random.rand(4) + 1j*np.random.rand(4)
+    output_dumb = fcs.matvec_complex(matrix, vector, function='dumb')
+    output_numba = fcs.matvec_complex(matrix, vector, function='numba')
+    output_dot = fcs.matvec_complex(matrix, vector, function='dot')
+    output_columns = fcs.matvec_complex(matrix, vector, function='columns')
+    output_numpy_dot = np.dot(matrix, vector)
+    aae(output_dumb, output_numpy_dot, decimal=10)
+    aae(output_numba, output_numpy_dot, decimal=10)
+    aae(output_dot, output_numpy_dot, decimal=10)
+    aae(output_columns, output_numpy_dot, decimal=10)
 
 
 # Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)

@@ -702,7 +702,7 @@ def outer_complex(x, y, function='numba'):
 
 # matrix-vector product
 
-def matvec_dot(A, x, check_input=True):
+def matvec_real_dumb(A, x, check_input=True):
     '''
     Compute the matrix-vector product of A and x, where
     A in R^NxM and x in R^M. The imaginary parts are ignored.
@@ -775,6 +775,148 @@ arrays, respectively'
             # the '.real' forces the code to use
             # only the real part of the arrays
             result[i] += A.real[i,j]*x.real[j]
+
+    return result
+
+
+def matvec_real_dot(A, x, check_input=True, function='numba'):
+    '''
+    Compute the matrix-vector product of A and x, where
+    A in R^NxM and x in R^M. The imaginary parts are ignored.
+
+    The code replaces a for by a dot product.
+
+    Parameters
+    ----------
+    A : array 2D
+        NxM matrix with real elements.
+
+    x : array 1D
+        Real vector witn M elements.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    function : string
+        Function to be used for computing the real dot product.
+        The function name must be 'dumb', 'numpy' or 'numba'.
+        Default is 'numba'.
+
+    Returns
+    -------
+    result : array 1D
+        Product of A and x.
+    '''
+    if check_input is True:
+        assert (A.ndim == 2) and (x.ndim == 1), 'A and x must be 2D and 1D \
+arrays, respectively'
+        assert A.shape[1] == x.size, 'A and x do not match'
+
+    dot_real = {
+        'dumb': dot_real_dumb,
+        'numpy': dot_real_numpy,
+        'numba': dot_real_numba
+    }
+    if function not in dot_real:
+        raise ValueError("Function {} not recognized".format(function))
+
+    result = np.zeros(A.shape[0])
+    for i in range(A.shape[0]):
+        result[i] = dot_real[function](A[i,:], x, check_input=False)
+
+    return result
+
+
+def matvec_real_columns(A, x, check_input=True, function='numba'):
+    '''
+    Compute the matrix-vector product of A and x, where
+    A in R^NxM and x in R^M. The imaginary parts are ignored.
+
+    The code replaces a for by a scalar-vector product.
+
+    Parameters
+    ----------
+    A : array 2D
+        NxM matrix with real elements.
+
+    x : array 1D
+        Real vector witn M elements.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    function : string
+        Function to be used for computing the real dot product.
+        The function name must be 'dumb', 'numpy' or 'numba'.
+        Default is 'numba'.
+
+    Returns
+    -------
+    result : array 1D
+        Product of A and x.
+    '''
+    if check_input is True:
+        assert (A.ndim == 2) and (x.ndim == 1), 'A and x must be 2D and 1D \
+arrays, respectively'
+        assert A.shape[1] == x.size, 'A and x do not match'
+
+    scalar_vec_real = {
+        'dumb': scalar_vec_real_dumb,
+        'numpy': scalar_vec_real_numpy,
+        'numba': scalar_vec_real_numba
+    }
+    if function not in scalar_vec_real:
+        raise ValueError("Function {} not recognized".format(function))
+
+    result = np.zeros(A.shape[0])
+    for j in range(A.shape[1]):
+        result += scalar_vec_real[function](x[j], A[:,j], check_input=False)
+
+    return result
+
+
+def matvec_complex(A, x, function='numba'):
+    '''
+    Compute the matrix-vector product of an NxM matrix A and
+    a Mx1 vector x.
+
+    Parameters
+    ----------
+    A : array 2D
+        NxM matrix.
+
+    x : array 1D
+        Mx1 vector.
+
+    function : string
+        Function to be used for computing the real mattrix-vectorvec product.
+        The function name must be 'dumb', 'numba', 'dot' or 'columns'.
+        Default is 'numba'.
+
+    Returns
+    -------
+    result : array 1D
+        Product of A and x.
+    '''
+    assert (A.ndim == 2) and (x.ndim == 1), 'A and x must be 2D and 1D \
+arrays, respectively'
+    assert A.shape[1] == x.size, 'A and x do not match'
+
+    matvec_real = {
+        'dumb': matvec_real_dumb,
+        'numba': matvec_real_numba,
+        'dot': matvec_real_dot,
+        'columns': matvec_real_columns
+    }
+    if function not in matvec_real:
+        raise ValueError("Function {} not recognized".format(function))
+
+    result_real = matvec_real[function](A.real, x.real, check_input=False)
+    result_real -= matvec_real[function](A.imag, x.imag, check_input=False)
+    result_imag = matvec_real[function](A.real, x.imag, check_input=False)
+    result_imag += matvec_real[function](A.imag, x.real, check_input=False)
+
+    result = result_real + 1j*result_imag
 
     return result
 
