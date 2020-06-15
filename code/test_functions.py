@@ -441,6 +441,60 @@ def test_matvec_complex_compare_numpy_dot():
     aae(output_columns, output_numpy_dot, decimal=10)
 
 
+### matrix-matrix product
+
+def test_matmat_real_input_dont_match():
+    'fail when matrices dont match to compute the product'
+    A = np.ones((3,4))
+    B = np.ones((4,5))
+    with pytest.raises(AssertionError):
+        fcs.matmat_real_dumb(A, B)
+        fcs.matmat_real_numba(A, B)
+        fcs.matmat_real_dot(A, B)
+        fcs.matvec_real_columns(A, B)
+        fcs.matmat_real_matvec(A, B)
+
+
+def test_matmat_real_functions_compare_numpy_dot():
+    'compare matmat_real_XXXX with numpy.dot'
+    np.random.seed = 35
+    matrix_1 = np.random.rand(5,3)
+    matrix_2 = np.random.rand(3,3)
+    output_dumb = fcs.matmat_real_dumb(matrix_1, matrix_2)
+    output_numba = fcs.matmat_real_numba(matrix_1, matrix_2)
+    output_dot = fcs.matmat_real_dot(matrix_1, matrix_2)
+    output_columns = fcs.matmat_real_columns(matrix_1, matrix_2)
+    output_matvec = fcs.matmat_real_matvec(matrix_1, matrix_2)
+    output_outer = fcs.matmat_real_outer(matrix_1, matrix_2)
+    reference = np.dot(matrix_1, matrix_2)
+    aae(output_dumb, reference, decimal=10)
+    aae(output_numba, reference, decimal=10)
+    aae(output_dot, reference, decimal=10)
+    aae(output_columns, reference, decimal=10)
+    aae(output_matvec, reference, decimal=10)
+    aae(output_outer, reference, decimal=10)
+
+
+def test_matmat_complex_compare_numpy_dot():
+    'compare matmat_complex with numpy.dot'
+    np.random.seed = 13
+    matrix_1 = np.random.rand(5,3) + 1j*np.random.rand(5,3)
+    matrix_2 = np.random.rand(3,3) + 1j*np.random.rand(3,3)
+    output_dumb = fcs.matmat_complex(matrix_1, matrix_2, function='dumb')
+    output_numba = fcs.matmat_complex(matrix_1, matrix_2, function='numba')
+    output_dot = fcs.matmat_complex(matrix_1, matrix_2, function='dot')
+    output_columns = fcs.matmat_complex(matrix_1, matrix_2, function='columns')
+    output_matvec = fcs.matmat_complex(matrix_1, matrix_2, function='matvec')
+    output_outer = fcs.matmat_complex(matrix_1, matrix_2, function='outer')
+    reference = np.dot(matrix_1, matrix_2)
+    aae(output_dumb, reference, decimal=10)
+    aae(output_numba, reference, decimal=10)
+    aae(output_dot, reference, decimal=10)
+    aae(output_columns, reference, decimal=10)
+    aae(output_matvec, reference, decimal=10)
+    aae(output_outer, reference, decimal=10)
+
+
 # Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)
 
 # def test_DFT_invalid_scalar():
