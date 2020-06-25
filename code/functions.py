@@ -1,5 +1,7 @@
 import numpy as np
-from numba import njit, prange, vectorize, guvectorize, cfunc, types, carray
+from numba import njit
+from scipy.linalg import dft
+
 
 # scalar-vector product
 
@@ -36,7 +38,7 @@ def scalar_vec_real_dumb(a, x, check_input=True):
     for i in range(x.size):
         # the '.real' forces the code to use
         # only the real part of the arrays
-        result[i] = a*x.real[i]
+        result[i] = a.real*x.real[i]
 
     return result
 
@@ -70,7 +72,7 @@ def scalar_vec_real_numpy(a, x, check_input=True):
         assert a.ndim == 0, 'a must be a scalar'
         assert x.ndim == 1, 'x must be a 1D'
 
-    result = a*x.real
+    result = a.real*x.real
 
     return result
 
@@ -109,7 +111,7 @@ def scalar_vec_real_numba(a, x, check_input=True):
     for i in range(x.size):
         # the '.real' forces the code to use
         # only the real part of the arrays
-        result[i] = a*x.real[i]
+        result[i] = a.real*x.real[i]
 
     return result
 
@@ -946,6 +948,64 @@ arrays, respectively'
     return result
 
 
+# diagonal matvec-product
+
+# def matvec_diag_real(a, x, k, check_input=True, function='numba'):
+#     '''
+#     Compute the matrix-vector product of A and x, where A in R^NxN and x in
+#     R^N. Matrix A has all elements equal to zero, except those on its diagonal
+#     k, where k = -(N-1), ..., N-1. The non-null elements of A are stored in the
+#     vector a, which has N - |k| elements. The imaginary parts are ignored.
+#
+#     Parameters
+#     ----------
+#     a : array 1D
+#         Real vector containing the non-null elements of A.
+#
+#     x : array 1D
+#         Real vector witn M elements.
+#
+#     k : int
+#         Positive integer varying from -(N-1) to (N-1).
+#
+#     check_input : boolean
+#         If True, verify if the input is valid. Default is True.
+#
+#     function : string
+#         Function to be used for computing the real hadamard product.
+#         The function name must be 'dumb', 'numpy' or 'numba'.
+#         Default is 'numba'.
+#
+#     Returns
+#     -------
+#     result : array 1D
+#         Product of A and x.
+#     '''
+#     if check_input is True:
+#         assert a.ndim == x.ndim == 1, 'a and x must be 1D arrays'
+#         assert isinstance(k, int), 'k must be an integer'
+#         assert np.abs(k) >= x.size-1, '|k| must be greater than or equal to N-1'
+#
+#     hadamard_real = {
+#         'dumb': hadamard_real_dumb,
+#         'numpy': hadamard_real_numpy,
+#         'numba': hadamard_real_numba
+#     }
+#     if function not in hadamard_real:
+#         raise ValueError("Function {} not recognized".format(function))
+#
+#     if k == 0:
+#         result = hadamard_real[function](a, x, check_input=False)
+#     elif k > 0:
+#         result = hadamard_real[function](a, x[k+1:], check_input=False)
+#         result = np.hstack(result, np.zeros(k))
+#     else:
+#         result = hadamard_real[function](a, x[:N+k], check_input=False)
+#         result = np.hstack(np.zeros(-k), result)
+#
+#     return result
+
+
 # matrix-matrix product
 
 def matmat_real_dumb(A, B, check_input=True):
@@ -1151,7 +1211,7 @@ def matmat_real_matvec(A, B, check_input=True, function='numba'):
 
     result = np.empty((A.shape[0], B.shape[1]))
     for j in range(B.shape[1]):
-            result[:,j] = matvec_real[function](A, B[:,j], check_input=False)
+        result[:,j] = matvec_real[function](A, B[:,j], check_input=False)
 
     return result
 
@@ -1250,72 +1310,124 @@ def matmat_complex(A, B, check_input=True, function='numba'):
 
 # Fourier Transform
 
-# def DFT_dumb(x, scale=None):
-#     '''
-#     Compute the Discrete Fourier Transform (DFT) of the 1D array x.
-#
-#     The code is a slow version of the algorithm.
-#
-#     Parameters
-#     ----------
-#     x : array 1D
-#         Vector with N elements.
-#     scale : {None, 'ortho'}, optional
-#         None (the default normalization) has the transform unscaled
-#         and requires the inverse transform to be scaled by 1/N.
-#         'sqrtn' scales the transform by 1/sqrt{N} and requires the inverse
-#         transform to be scaled by 1/sqrt{N}. In this case, the FT is unitary.
-#
-#     Returns
-#     -------
-#     X : array 1D
-#         DFT of x.
-#     '''
-#     assert scale in [None, 'sqrtn'], "scale must be None or 'sqrtn'"
-#     x = np.asarray(x)
-#     # define the Fourier matrix
-#     N = x.size
-#     kn = np.outer(np.arange(N), np.arange(N))
-#     Fn = np.exp(-2j * np.pi * kn / N)
-#     # compute the DFT
-#     if scale is None:
-#         X = np.dot(Fn, x)
-#     else:
-#         X = np.dot(Fn, x)/np.sqrt(N)
-#
-#     return X
-#
-# def IDFT_dumb(x, scale='N'):
-#     '''
-#     Compute the Inverse Discrete Fourier Transform (IDFT) of the 1D array x.
-#
-#     The code is a slow version of the algorithm.
-#
-#     Parameters
-#     ----------
-#     x : array 1D
-#         Vector with N elements.
-#     scale : {None, 'ortho'}, optional
-#         'N' (the default normalization) has the transform unscaled
-#         and requires the inverse transform to be scaled by 1/N.
-#         'sqrtn' scales the transform by 1/sqrt{N} and requires the inverse
-#         transform to be scaled by 1/sqrt{N}. In this case, the FT is unitary.
-#
-#     Returns
-#     -------
-#     X : array 1D
-#         DFT of x.
-#     '''
-#     assert scale in ['N', 'sqrtn'], "scale must be 'N' or 'sqrtn'"
-#     x = np.asarray(x)
-#     # define the Fourier matrix
-#     N = x.size
-#     kn = np.outer(np.arange(N), np.arange(N))
-#     Fn = np.exp(2j * np.pi * kn / N)
-#     # compute the DFT
-#     if scale is 'N':
-#         X = np.dot(Fn, x)/N
-#     else:
-#         X = np.dot(Fn, x)/np.sqrt(N)
-#
-#     return X
+
+def DFT_matrix(N, scale=None, conjugate=False, check_input=True):
+    '''
+    Compute the Discrete Fourier Transform (DFT) matrix.
+
+    Parameters
+    ----------
+    N : int
+        Order of DFT matrix.
+
+    scale : None, 'n' or 'sqrtn'
+        None (the default normalization) has the transform unscaled
+        and requires the inverse transform to be scaled by 1/N.
+        'sqrtn' scales the transform by 1/sqrt{N} and requires the inverse
+        transform to be scaled by 1/sqrt{N}. In this case, the transform
+        is unitary.
+
+    conjugate : boolean
+        If True, returns the complex conjugate of FN. Default is False.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    Fn : 2D array
+        DFT matrix.
+    '''
+    if check_input is True:
+        assert scale in [None, 'n', 'sqrtn'], "scale must be None, 'n' or 'sqrtn'"
+        assert isinstance(N, int) and N > 0, 'N must be a positive integer'
+
+    kn = outer_real_numba(x=np.arange(N), y=np.arange(N), check_input=False)
+
+    # define the unscaled Fourier matrix
+    if conjugate is True:
+        Fn = np.exp(2 * np.pi * 1j * kn / N)
+    else:
+        Fn = np.exp(-2 * np.pi * 1j * kn / N)
+
+    if scale is 'n':
+        return Fn/N
+    elif scale is 'sqrtn':
+        return Fn/np.sqrt(N)
+    else:
+        return Fn
+
+
+def DFT_dumb(x, scale=None):
+    '''
+    Compute the Discrete Fourier Transform (DFT) of the 1D array x.
+
+    The code is a slow version of the algorithm.
+
+    Parameters
+    ----------
+    x : array 1D
+        Vector with N elements.
+
+    scale : None, 'n' or 'sqrtn'
+        None (the default normalization) has the transform unscaled
+        and requires the inverse transform to be scaled by 1/N.
+        'n' scales the transform by 1/N.
+        'sqrtn' scales the transform by 1/sqrt{N} and requires the inverse
+        transform to be scaled by 1/sqrt{N}. In this case, the transform
+        is unitary.
+
+    Returns
+    -------
+    X : array 1D
+        DFT of x.
+    '''
+    assert scale in [None, 'n', 'sqrtn'], "scale must be None, 'n' or 'sqrtn'"
+
+    x = np.asarray(x)
+
+    # define the Fourier matrix
+    N = x.size
+    Fn = DFT_matrix(N=N, scale=scale, conjugate=False, check_input=False)
+
+    # compute the DFT
+    X = matvec_complex(A=Fn, x=x, check_input=False, function='numba')
+
+    return X
+
+
+def IDFT_dumb(X, scale='n'):
+    '''
+    Compute the Inverse Discrete Fourier Transform (IDFT) of the 1D array x.
+
+    The code is a slow version of the algorithm.
+
+    Parameters
+    ----------
+    X : array 1D
+        Complex vector with N elements.
+
+    scale : None, 'n' or 'sqrtn'
+        None has the inverse transform unscaled.
+        'n' scales the transform by 1/N (default normalization).
+        'sqrtn' scales the inverse transform by 1/sqrt{N} and requires the
+        transform to be scaled by 1/sqrt{N}. In this case, the transform
+        is unitary.
+
+    Returns
+    -------
+    x : array 1D
+        IDFT of X.
+    '''
+    assert scale in [None, 'n', 'sqrtn'], "scale must be None, 'n' or 'sqrtn'"
+
+    X = np.asarray(X)
+
+    # define the Fourier matrix
+    N = X.size
+    Fn_conj = DFT_matrix(N=N, scale=scale, conjugate=True, check_input=False)
+
+    # compute the DFT
+    x = matvec_complex(A=Fn_conj, x=X, check_input=False, function='numba')
+
+    return x

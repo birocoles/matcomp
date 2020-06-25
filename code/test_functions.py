@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 from numpy.testing import assert_almost_equal as aae
 import pytest
 import functions as fcs
@@ -39,7 +40,7 @@ def test_scalar_vec_real_known_values():
     'check output produced by specific input'
     scalar = 1
     vector = np.linspace(23.1, 52, 10)
-    reference_output = vector[:]
+    reference_output = np.copy(vector)
     computed_output_dumb = fcs.scalar_vec_real_dumb(scalar, vector)
     computed_output_numpy = fcs.scalar_vec_real_numpy(scalar, vector)
     computed_output_numba = fcs.scalar_vec_real_numba(scalar, vector)
@@ -50,7 +51,7 @@ def test_scalar_vec_real_known_values():
 
 def test_scalar_vec_complex_functions_compare_numpy():
     'compare scalar_vec_complex dumb, numpy and numba with numpy'
-    np.random.seed = 3
+    np.random.default_rng(3)
     scalar = np.random.rand() + 1j*np.random.rand()
     vector = np.random.rand(13) + np.random.rand(13)*1j
     output_dumb = fcs.scalar_vec_complex(scalar, vector, function='dumb')
@@ -99,7 +100,7 @@ def test_dot_real_known_values():
 
 def test_dot_real_compare_numpy_dot():
     'compare with numpy.dot'
-    np.random.seed = 41
+    np.random.default_rng(41)
     vector_1 = np.random.rand(13)
     vector_2 = np.random.rand(13)
     reference_output_numpy = np.dot(vector_1, vector_2)
@@ -113,7 +114,7 @@ def test_dot_real_compare_numpy_dot():
 
 def test_dot_real_commutativity():
     'verify commutativity'
-    np.random.seed = 19
+    np.random.default_rng(19)
     a = np.random.rand(15)
     b = np.random.rand(15)
     # a dot b = b dot a
@@ -130,7 +131,7 @@ def test_dot_real_commutativity():
 
 def test_dot_real_distributivity():
     'verify distributivity over sum'
-    np.random.seed = 19
+    np.random.default_rng(5)
     a = np.random.rand(15)
     b = np.random.rand(15)
     c = np.random.rand(15)
@@ -148,7 +149,7 @@ def test_dot_real_distributivity():
 
 def test_dot_real_scalar_multiplication():
     'verify scalar multiplication property'
-    np.random.seed = 8
+    np.random.default_rng(8)
     a = np.random.rand(15)
     b = np.random.rand(15)
     c1 = 5.6
@@ -168,7 +169,7 @@ def test_dot_real_scalar_multiplication():
 def test_dot_complex_functions_compare_numpy_dot():
     'compare dot_complex_dumb, numpy and numba with numpy.dot'
     # first input complex
-    np.random.seed = 3
+    np.random.default_rng(3)
     vector_1 = np.random.rand(13) + np.random.rand(13)*1j
     vector_2 = np.random.rand(13) + np.random.rand(13)*1j
     output_dumb = fcs.dot_complex_dumb(vector_1, vector_2)
@@ -183,7 +184,7 @@ def test_dot_complex_functions_compare_numpy_dot():
 def test_dot_complex_compare_numpy_dot():
     'compare dot_complex with numpy.dot'
     # first input complex
-    np.random.seed = 78
+    np.random.default_rng(78)
     vector_1 = np.random.rand(10) + np.random.rand(10)*1j
     vector_2 = np.random.rand(10) + np.random.rand(10)*1j
     output_dumb = fcs.dot_complex(vector_1, vector_2, function='dumb')
@@ -198,7 +199,7 @@ def test_dot_complex_compare_numpy_dot():
 def test_dot_complex_compare_numpy_vdot():
     'compare dot_complex with numpy.vdot'
     # first input complex
-    np.random.seed = 78
+    np.random.default_rng(8)
     vector_1 = np.random.rand(10) + np.random.rand(10)*1j
     vector_2 = np.random.rand(10) + np.random.rand(10)*1j
     output_dumb = fcs.dot_complex(vector_1, vector_2,
@@ -236,22 +237,22 @@ def test_hadamard_real_different_shapes():
 def test_hadamard_real_compare_asterisk():
     'compare hadamard_real function with * operator'
     # for vectors
-    np.random.seed = 7
+    np.random.default_rng(7)
     input1 = np.random.rand(10)
     input2 = np.random.rand(10)
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
-    output_numpy = fcs.hadamard_real_numba(input1, input2)
+    output_numpy = fcs.hadamard_real_numpy(input1, input2)
     output_numba = fcs.hadamard_real_numba(input1, input2)
     output_asterisk = input1*input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
     # for matrices
-    np.random.seed = 9
+    np.random.default_rng(9)
     input1 = np.random.rand(5, 7)
     input2 = np.random.rand(5, 7)
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
-    output_numpy = fcs.hadamard_real_numba(input1, input2)
+    output_numpy = fcs.hadamard_real_numpy(input1, input2)
     output_numba = fcs.hadamard_real_numba(input1, input2)
     output_asterisk = input1*input2
     aae(output_dumb, output_asterisk, decimal=10)
@@ -262,7 +263,7 @@ def test_hadamard_real_compare_asterisk():
 def test_hadamard_complex_compare_asterisk():
     'compare hadamard_complex function with * operator'
     # for matrices
-    np.random.seed = 34
+    np.random.default_rng(34)
     input1 = np.random.rand(4, 3)
     input2 = np.random.rand(4, 3)
     output_dumb = fcs.hadamard_complex(input1, input2, function='dumb')
@@ -295,7 +296,7 @@ def test_outer_real_input_not_vector():
 
 def test_outer_real_compare_numpy_outer():
     'compare with numpy.outer'
-    np.random.seed = 301
+    np.random.default_rng(301)
     vector_1 = np.random.rand(13)
     vector_2 = np.random.rand(13)
     reference_output_numpy = np.outer(vector_1, vector_2)
@@ -322,7 +323,7 @@ def test_outer_real_known_values():
 
 def test_outer_real_transposition():
     'verify the transposition property'
-    np.random.seed = 72
+    np.random.default_rng(72)
     a = np.random.rand(8)
     b = np.random.rand(5)
     a_outer_b_T_dumb = fcs.outer_real_dumb(a, b).T
@@ -338,7 +339,7 @@ def test_outer_real_transposition():
 
 def test_outer_real_distributivity():
     'verify the distributivity property'
-    np.random.seed = 72
+    np.random.default_rng(2)
     a = np.random.rand(5)
     b = np.random.rand(5)
     c = np.random.rand(4)
@@ -358,7 +359,7 @@ def test_outer_real_distributivity():
 
 def test_outer_real_scalar_multiplication():
     'verify scalar multiplication property'
-    np.random.seed = 2
+    np.random.default_rng(23)
     a = np.random.rand(3)
     b = np.random.rand(6)
     c = 3.4
@@ -384,7 +385,7 @@ def test_outer_complex_invalid_function():
 def test_outer_complex_compare_numpy_outer():
     'compare hadamard_complex function with * operator'
     # for matrices
-    np.random.seed = 21
+    np.random.default_rng(21)
     input1 = np.random.rand(7) + 1j*np.random.rand(7)
     input2 = np.random.rand(7) + 1j*np.random.rand(7)
     output_dumb = fcs.outer_complex(input1, input2, function='dumb')
@@ -411,7 +412,7 @@ def test_matvec_real_input_doesnt_match():
 
 def test_matvec_real_functions_compare_numpy_dot():
     'compare matvec_real_XXXX with numpy.dot'
-    np.random.seed = 24
+    np.random.default_rng(24)
     matrix = np.random.rand(3,4)
     vector = np.random.rand(4)
     output_dumb = fcs.matvec_real_dumb(matrix, vector)
@@ -427,7 +428,7 @@ def test_matvec_real_functions_compare_numpy_dot():
 
 def test_matvec_complex_compare_numpy_dot():
     'compare matvec_complex with numpy.dot'
-    np.random.seed = 98
+    np.random.default_rng(98)
     matrix = np.random.rand(3,4) + 1j*np.random.rand(3,4)
     vector = np.random.rand(4) + 1j*np.random.rand(4)
     output_dumb = fcs.matvec_complex(matrix, vector, function='dumb')
@@ -441,23 +442,54 @@ def test_matvec_complex_compare_numpy_dot():
     aae(output_columns, output_numpy_dot, decimal=10)
 
 
+### diagonal matrix-vector product
+
+# def test_matvec_diag_real_invalid_input():
+#     'stop for invalid input'
+#     # a does not have ndim==1
+#     a = np.ones((5,4))
+#     x = np.ones(3)
+#     k = 0
+#     with pytest.raises(AssertionError):
+#         fcs.matvec_diag_real(a, x, k)
+#     # x does not have ndim==1
+#     a = np.ones(5)
+#     x = np.ones((3,3))
+#     k = 0
+#     with pytest.raises(AssertionError):
+#         fcs.matvec_diag_real(a, x, k)
+#     # k is negative
+#     a = np.ones(3)
+#     x = np.ones(3)
+#     k = -3
+#     with pytest.raises(AssertionError):
+#         fcs.matvec_diag_real(a, x, k)
+#     # |k| > N-1
+#     a = np.ones(3)
+#     x = np.ones(3)
+#     k = 5
+#     with pytest.raises(AssertionError):
+#         fcs.matvec_diag_real(a, x, k)
+
+
 ### matrix-matrix product
 
 def test_matmat_real_input_dont_match():
     'fail when matrices dont match to compute the product'
-    A = np.ones((3,4))
+    A = np.ones((3,3))
     B = np.ones((4,5))
     with pytest.raises(AssertionError):
-        fcs.matmat_real_dumb(A, B)
-        fcs.matmat_real_numba(A, B)
-        fcs.matmat_real_dot(A, B)
-        fcs.matvec_real_columns(A, B)
-        fcs.matmat_real_matvec(A, B)
+        fcs.matmat_real_dumb(A, B, check_input=True)
+        fcs.matmat_real_numba(A, B, check_input=True)
+        fcs.matmat_real_dot(A, B, check_input=True)
+        fcs.matmat_real_columns(A, B, check_input=True)
+        fcs.matmat_real_outer(A, B, check_input=True)
+        fcs.matmat_real_matvec(A, B, check_input=True)
 
 
 def test_matmat_real_functions_compare_numpy_dot():
     'compare matmat_real_XXXX with numpy.dot'
-    np.random.seed = 35
+    np.random.default_rng(35)
     matrix_1 = np.random.rand(5,3)
     matrix_2 = np.random.rand(3,3)
     output_dumb = fcs.matmat_real_dumb(matrix_1, matrix_2)
@@ -477,7 +509,7 @@ def test_matmat_real_functions_compare_numpy_dot():
 
 def test_matmat_complex_compare_numpy_dot():
     'compare matmat_complex with numpy.dot'
-    np.random.seed = 13
+    np.random.default_rng(13)
     matrix_1 = np.random.rand(5,3) + 1j*np.random.rand(5,3)
     matrix_2 = np.random.rand(3,3) + 1j*np.random.rand(3,3)
     output_dumb = fcs.matmat_complex(matrix_1, matrix_2, function='dumb')
@@ -497,49 +529,72 @@ def test_matmat_complex_compare_numpy_dot():
 
 # Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)
 
-# def test_DFT_invalid_scalar():
-#     'check error for invalid scaling factor'
-#     data = np.zeros(10)
-#     invalid_scales = [data.size, np.sqrt(data.size), 'n', 'srqtn']
-#     with pytest.raises(AssertionError):
-#         for invalid_scale in invalid_scales:
-#             fcs.DFT_dumb(x=data, scale=invalid_scale)
-#
-#
-# def test_IDFT_invalid_scalar():
-#     'check error for invalid scaling factor'
-#     data = np.zeros(10)
-#     invalid_scales = [data.size, np.sqrt(data.size), 'n', 'srqtn']
-#     with pytest.raises(AssertionError):
-#         for invalid_scale in invalid_scales:
-#             fcs.IDFT_dumb(x=data, scale=invalid_scale)
-#
-#
-# def test_DFT_compare_numpy_fft_fft():
-#     'compare with numpy.fft.fft'
-#     np.random.seed = 56
-#     # unscaled DFT
-#     data = np.random.rand(100)
-#     reference_output_numpy = np.fft.fft(a=data, norm=None)
-#     computed_output_dumb = fcs.DFT_dumb(x=data, scale=None)
-#     aae(reference_output_numpy, computed_output_dumb, decimal=10)
-#     # scaled DFT
-#     data = np.random.rand(100)
-#     reference_output_numpy = np.fft.fft(a=data, norm='ortho')
-#     computed_output_dumb = fcs.DFT_dumb(x=data, scale='sqrtn')
-#     aae(reference_output_numpy, computed_output_dumb, decimal=10)
-#
-#
-# def test_IDFT_compare_numpy_fft_ifft():
-#     'compare with numpy.fft.ifft'
-#     np.random.seed = 4
-#     # unscaled DFT
-#     data = np.random.rand(100)+1j*np.random.rand(100)
-#     reference_output_numpy = np.fft.ifft(a=data, norm=None)
-#     computed_output_dumb = fcs.IDFT_dumb(x=data, scale='N')
-#     aae(reference_output_numpy, computed_output_dumb, decimal=10)
-#     # scaled DFT
-#     data = np.random.rand(100)+1j*np.random.rand(100)
-#     reference_output_numpy = np.fft.ifft(a=data, norm='ortho')
-#     computed_output_dumb = fcs.IDFT_dumb(x=data, scale='sqrtn')
-#     aae(reference_output_numpy, computed_output_dumb, decimal=10)
+def test_DFT_matrix_compare_scipy():
+    'compare DFT matrix with scipy.linalg.dft'
+    N = 20
+    # Fourier matrix of DFT
+    reference_unscaled = sp.linalg.dft(N, scale=None)
+    reference_n = sp.linalg.dft(N, scale='n')
+    reference_sqrtn = sp.linalg.dft(N, scale='sqrtn')
+    computed_unscaled = fcs.DFT_matrix(N, scale=None, conjugate=False)
+    computed_n = fcs.DFT_matrix(N, scale='n', conjugate=False)
+    computed_sqrtn = fcs.DFT_matrix(N, scale='sqrtn', conjugate=False)
+    aae(computed_unscaled, reference_unscaled, decimal=10)
+    aae(computed_n, reference_n, decimal=10)
+    aae(computed_sqrtn, reference_sqrtn, decimal=10)
+    # Fourier matrix of IDFT
+    computed_unscaled = fcs.DFT_matrix(N, scale=None, conjugate=True)
+    computed_n = fcs.DFT_matrix(N, scale='n', conjugate=True)
+    computed_sqrtn = fcs.DFT_matrix(N, scale='sqrtn', conjugate=True)
+    aae(computed_unscaled, np.conj(reference_unscaled), decimal=10)
+    aae(computed_n, np.conj(reference_n), decimal=10)
+    aae(computed_sqrtn, np.conj(reference_sqrtn), decimal=10)
+
+
+def test_DFT_matrix_invalid_scale():
+    'check error for invalid scaling factor'
+    data = np.zeros(10)
+    invalid_scales = [data.size, np.sqrt(data.size), 'N', 'srqtn']
+    with pytest.raises(AssertionError):
+        for invalid_scale in invalid_scales:
+            fcs.DFT_matrix(N=data.size, scale=invalid_scale)
+
+
+def test_DFT_IDFT_dumb_invalid_scale():
+    'check error for invalid scaling factor'
+    data = np.zeros(10)
+    invalid_scales = [data.size, np.sqrt(data.size), 'N', 'srqtn']
+    with pytest.raises(AssertionError):
+        for invalid_scale in invalid_scales:
+            fcs.DFT_dumb(x=data, scale=invalid_scale)
+            fcs.IDFT_dumb(X=data, scale=invalid_scale)
+
+
+def test_DFT_dumb_compare_numpy_fft_fft():
+    'compare with numpy.fft.fft'
+    np.random.default_rng(56)
+    # scale=None
+    data = np.random.rand(15)
+    reference_output_numpy = sp.fft.fft(x=data, norm=None)
+    computed_output_dumb = fcs.DFT_dumb(x=data, scale=None)
+    aae(reference_output_numpy, computed_output_dumb, decimal=10)
+    # scale='sqrtn'
+    data = np.random.rand(15)
+    reference_output_scipy = sp.fft.fft(x=data, norm='ortho')
+    computed_output_dumb = fcs.DFT_dumb(x=data, scale='sqrtn')
+    aae(reference_output_scipy, computed_output_dumb, decimal=10)
+
+
+def test_IDFT_dumb_compare_numpy_fft_ifft():
+    'compare with numpy.fft.ifft'
+    np.random.default_rng(10)
+    # scale=None
+    data = np.random.rand(15)+1j*np.random.rand(15)
+    reference_output_scipy = sp.fft.ifft(x=data, norm=None)
+    computed_output_dumb = fcs.IDFT_dumb(X=data, scale='n')
+    aae(reference_output_scipy, computed_output_dumb, decimal=10)
+    # scale='sqrtn'
+    data = np.random.rand(15)+1j*np.random.rand(15)
+    reference_output_scipy = sp.fft.ifft(x=data, norm='ortho')
+    computed_output_dumb = fcs.IDFT_dumb(X=data, scale='sqrtn')
+    aae(reference_output_scipy, computed_output_dumb, decimal=10)
