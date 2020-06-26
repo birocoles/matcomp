@@ -51,7 +51,7 @@ def test_scalar_vec_real_known_values():
 
 def test_scalar_vec_complex_functions_compare_numpy():
     'compare scalar_vec_complex dumb, numpy and numba with numpy'
-    np.random.default_rng(3)
+    np.random.seed(3)
     scalar = np.random.rand() + 1j*np.random.rand()
     vector = np.random.rand(13) + np.random.rand(13)*1j
     output_dumb = fcs.scalar_vec_complex(scalar, vector, function='dumb')
@@ -100,7 +100,7 @@ def test_dot_real_known_values():
 
 def test_dot_real_compare_numpy_dot():
     'compare with numpy.dot'
-    np.random.default_rng(41)
+    np.random.seed(41)
     vector_1 = np.random.rand(13)
     vector_2 = np.random.rand(13)
     reference_output_numpy = np.dot(vector_1, vector_2)
@@ -114,7 +114,7 @@ def test_dot_real_compare_numpy_dot():
 
 def test_dot_real_commutativity():
     'verify commutativity'
-    np.random.default_rng(19)
+    np.random.seed(19)
     a = np.random.rand(15)
     b = np.random.rand(15)
     # a dot b = b dot a
@@ -131,7 +131,7 @@ def test_dot_real_commutativity():
 
 def test_dot_real_distributivity():
     'verify distributivity over sum'
-    np.random.default_rng(5)
+    np.random.seed(5)
     a = np.random.rand(15)
     b = np.random.rand(15)
     c = np.random.rand(15)
@@ -149,7 +149,7 @@ def test_dot_real_distributivity():
 
 def test_dot_real_scalar_multiplication():
     'verify scalar multiplication property'
-    np.random.default_rng(8)
+    np.random.seed(8)
     a = np.random.rand(15)
     b = np.random.rand(15)
     c1 = 5.6
@@ -169,7 +169,7 @@ def test_dot_real_scalar_multiplication():
 def test_dot_complex_functions_compare_numpy_dot():
     'compare dot_complex_dumb, numpy and numba with numpy.dot'
     # first input complex
-    np.random.default_rng(3)
+    np.random.seed(3)
     vector_1 = np.random.rand(13) + np.random.rand(13)*1j
     vector_2 = np.random.rand(13) + np.random.rand(13)*1j
     output_dumb = fcs.dot_complex_dumb(vector_1, vector_2)
@@ -184,7 +184,7 @@ def test_dot_complex_functions_compare_numpy_dot():
 def test_dot_complex_compare_numpy_dot():
     'compare dot_complex with numpy.dot'
     # first input complex
-    np.random.default_rng(78)
+    np.random.seed(78)
     vector_1 = np.random.rand(10) + np.random.rand(10)*1j
     vector_2 = np.random.rand(10) + np.random.rand(10)*1j
     output_dumb = fcs.dot_complex(vector_1, vector_2, function='dumb')
@@ -199,7 +199,7 @@ def test_dot_complex_compare_numpy_dot():
 def test_dot_complex_compare_numpy_vdot():
     'compare dot_complex with numpy.vdot'
     # first input complex
-    np.random.default_rng(8)
+    np.random.seed(8)
     vector_1 = np.random.rand(10) + np.random.rand(10)*1j
     vector_2 = np.random.rand(10) + np.random.rand(10)*1j
     output_dumb = fcs.dot_complex(vector_1, vector_2,
@@ -237,7 +237,7 @@ def test_hadamard_real_different_shapes():
 def test_hadamard_real_compare_asterisk():
     'compare hadamard_real function with * operator'
     # for vectors
-    np.random.default_rng(7)
+    np.random.seed(7)
     input1 = np.random.rand(10)
     input2 = np.random.rand(10)
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
@@ -248,7 +248,7 @@ def test_hadamard_real_compare_asterisk():
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
     # for matrices
-    np.random.default_rng(9)
+    np.random.seed(9)
     input1 = np.random.rand(5, 7)
     input2 = np.random.rand(5, 7)
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
@@ -263,7 +263,7 @@ def test_hadamard_real_compare_asterisk():
 def test_hadamard_complex_compare_asterisk():
     'compare hadamard_complex function with * operator'
     # for matrices
-    np.random.default_rng(34)
+    np.random.seed(34)
     input1 = np.random.rand(4, 3)
     input2 = np.random.rand(4, 3)
     output_dumb = fcs.hadamard_complex(input1, input2, function='dumb')
@@ -296,7 +296,7 @@ def test_outer_real_input_not_vector():
 
 def test_outer_real_compare_numpy_outer():
     'compare with numpy.outer'
-    np.random.default_rng(301)
+    np.random.seed(301)
     vector_1 = np.random.rand(13)
     vector_2 = np.random.rand(13)
     reference_output_numpy = np.outer(vector_1, vector_2)
@@ -323,7 +323,7 @@ def test_outer_real_known_values():
 
 def test_outer_real_transposition():
     'verify the transposition property'
-    np.random.default_rng(72)
+    np.random.seed(72)
     a = np.random.rand(8)
     b = np.random.rand(5)
     a_outer_b_T_dumb = fcs.outer_real_dumb(a, b).T
@@ -339,7 +339,7 @@ def test_outer_real_transposition():
 
 def test_outer_real_distributivity():
     'verify the distributivity property'
-    np.random.default_rng(2)
+    np.random.seed(2)
     a = np.random.rand(5)
     b = np.random.rand(5)
     c = np.random.rand(4)
@@ -359,7 +359,7 @@ def test_outer_real_distributivity():
 
 def test_outer_real_scalar_multiplication():
     'verify scalar multiplication property'
-    np.random.default_rng(23)
+    np.random.seed(23)
     a = np.random.rand(3)
     b = np.random.rand(6)
     c = 3.4
@@ -385,7 +385,7 @@ def test_outer_complex_invalid_function():
 def test_outer_complex_compare_numpy_outer():
     'compare hadamard_complex function with * operator'
     # for matrices
-    np.random.default_rng(21)
+    np.random.seed(21)
     input1 = np.random.rand(7) + 1j*np.random.rand(7)
     input2 = np.random.rand(7) + 1j*np.random.rand(7)
     output_dumb = fcs.outer_complex(input1, input2, function='dumb')
@@ -412,7 +412,7 @@ def test_matvec_real_input_doesnt_match():
 
 def test_matvec_real_functions_compare_numpy_dot():
     'compare matvec_real_XXXX with numpy.dot'
-    np.random.default_rng(24)
+    np.random.seed(24)
     matrix = np.random.rand(3,4)
     vector = np.random.rand(4)
     output_dumb = fcs.matvec_real_dumb(matrix, vector)
@@ -428,7 +428,7 @@ def test_matvec_real_functions_compare_numpy_dot():
 
 def test_matvec_complex_compare_numpy_dot():
     'compare matvec_complex with numpy.dot'
-    np.random.default_rng(98)
+    np.random.seed(98)
     matrix = np.random.rand(3,4) + 1j*np.random.rand(3,4)
     vector = np.random.rand(4) + 1j*np.random.rand(4)
     output_dumb = fcs.matvec_complex(matrix, vector, function='dumb')
@@ -489,7 +489,7 @@ def test_matmat_real_input_dont_match():
 
 def test_matmat_real_functions_compare_numpy_dot():
     'compare matmat_real_XXXX with numpy.dot'
-    np.random.default_rng(35)
+    np.random.seed(35)
     matrix_1 = np.random.rand(5,3)
     matrix_2 = np.random.rand(3,3)
     output_dumb = fcs.matmat_real_dumb(matrix_1, matrix_2)
@@ -509,7 +509,7 @@ def test_matmat_real_functions_compare_numpy_dot():
 
 def test_matmat_complex_compare_numpy_dot():
     'compare matmat_complex with numpy.dot'
-    np.random.default_rng(13)
+    np.random.seed(13)
     matrix_1 = np.random.rand(5,3) + 1j*np.random.rand(5,3)
     matrix_2 = np.random.rand(3,3) + 1j*np.random.rand(3,3)
     output_dumb = fcs.matmat_complex(matrix_1, matrix_2, function='dumb')
@@ -572,7 +572,7 @@ def test_DFT_IDFT_dumb_invalid_scale():
 
 def test_DFT_dumb_compare_numpy_fft_fft():
     'compare with numpy.fft.fft'
-    np.random.default_rng(56)
+    np.random.seed(56)
     # scale=None
     data = np.random.rand(15)
     reference_output_numpy = sp.fft.fft(x=data, norm=None)
@@ -587,7 +587,7 @@ def test_DFT_dumb_compare_numpy_fft_fft():
 
 def test_IDFT_dumb_compare_numpy_fft_ifft():
     'compare with numpy.fft.ifft'
-    np.random.default_rng(10)
+    np.random.seed(10)
     # scale=None
     data = np.random.rand(15)+1j*np.random.rand(15)
     reference_output_scipy = sp.fft.ifft(x=data, norm=None)
