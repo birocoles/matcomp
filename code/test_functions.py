@@ -571,7 +571,7 @@ def test_DFT_IDFT_dumb_invalid_scale():
 
 
 def test_DFT_dumb_compare_numpy_fft_fft():
-    'compare with numpy.fft.fft'
+    'compare with scipy.fft.fft'
     np.random.seed(56)
     # scale=None
     data = np.random.rand(15)
@@ -586,7 +586,7 @@ def test_DFT_dumb_compare_numpy_fft_fft():
 
 
 def test_IDFT_dumb_compare_numpy_fft_ifft():
-    'compare with numpy.fft.ifft'
+    'compare with scipy.fft.ifft'
     np.random.seed(10)
     # scale=None
     data = np.random.rand(15)+1j*np.random.rand(15)
