@@ -2,7 +2,7 @@ import numpy as np
 import scipy as sp
 from numpy.testing import assert_almost_equal as aae
 import pytest
-import functions as fcs
+import functions_intro as fcs
 
 ### scalar-vector product
 
@@ -525,76 +525,3 @@ def test_matmat_complex_compare_numpy_dot():
     aae(output_columns, reference, decimal=10)
     aae(output_matvec, reference, decimal=10)
     aae(output_outer, reference, decimal=10)
-
-
-# Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)
-
-def test_DFT_matrix_compare_scipy():
-    'compare DFT matrix with scipy.linalg.dft'
-    N = 20
-    # Fourier matrix of DFT
-    reference_unscaled = sp.linalg.dft(N, scale=None)
-    reference_n = sp.linalg.dft(N, scale='n')
-    reference_sqrtn = sp.linalg.dft(N, scale='sqrtn')
-    computed_unscaled = fcs.DFT_matrix(N, scale=None, conjugate=False)
-    computed_n = fcs.DFT_matrix(N, scale='n', conjugate=False)
-    computed_sqrtn = fcs.DFT_matrix(N, scale='sqrtn', conjugate=False)
-    aae(computed_unscaled, reference_unscaled, decimal=10)
-    aae(computed_n, reference_n, decimal=10)
-    aae(computed_sqrtn, reference_sqrtn, decimal=10)
-    # Fourier matrix of IDFT
-    computed_unscaled = fcs.DFT_matrix(N, scale=None, conjugate=True)
-    computed_n = fcs.DFT_matrix(N, scale='n', conjugate=True)
-    computed_sqrtn = fcs.DFT_matrix(N, scale='sqrtn', conjugate=True)
-    aae(computed_unscaled, np.conj(reference_unscaled), decimal=10)
-    aae(computed_n, np.conj(reference_n), decimal=10)
-    aae(computed_sqrtn, np.conj(reference_sqrtn), decimal=10)
-
-
-def test_DFT_matrix_invalid_scale():
-    'check error for invalid scaling factor'
-    data = np.zeros(10)
-    invalid_scales = [data.size, np.sqrt(data.size), 'N', 'srqtn']
-    with pytest.raises(AssertionError):
-        for invalid_scale in invalid_scales:
-            fcs.DFT_matrix(N=data.size, scale=invalid_scale)
-
-
-def test_DFT_IDFT_dumb_invalid_scale():
-    'check error for invalid scaling factor'
-    data = np.zeros(10)
-    invalid_scales = [data.size, np.sqrt(data.size), 'N', 'srqtn']
-    with pytest.raises(AssertionError):
-        for invalid_scale in invalid_scales:
-            fcs.DFT_dumb(x=data, scale=invalid_scale)
-            fcs.IDFT_dumb(X=data, scale=invalid_scale)
-
-
-def test_DFT_dumb_compare_numpy_fft_fft():
-    'compare with scipy.fft.fft'
-    np.random.seed(56)
-    # scale=None
-    data = np.random.rand(15)
-    reference_output_numpy = sp.fft.fft(x=data, norm=None)
-    computed_output_dumb = fcs.DFT_dumb(x=data, scale=None)
-    aae(reference_output_numpy, computed_output_dumb, decimal=10)
-    # scale='sqrtn'
-    data = np.random.rand(15)
-    reference_output_scipy = sp.fft.fft(x=data, norm='ortho')
-    computed_output_dumb = fcs.DFT_dumb(x=data, scale='sqrtn')
-    aae(reference_output_scipy, computed_output_dumb, decimal=10)
-
-
-def test_IDFT_dumb_compare_numpy_fft_ifft():
-    'compare with scipy.fft.ifft'
-    np.random.seed(10)
-    # scale=None
-    data = np.random.rand(15)+1j*np.random.rand(15)
-    reference_output_scipy = sp.fft.ifft(x=data, norm=None)
-    computed_output_dumb = fcs.IDFT_dumb(X=data, scale='n')
-    aae(reference_output_scipy, computed_output_dumb, decimal=10)
-    # scale='sqrtn'
-    data = np.random.rand(15)+1j*np.random.rand(15)
-    reference_output_scipy = sp.fft.ifft(x=data, norm='ortho')
-    computed_output_dumb = fcs.IDFT_dumb(X=data, scale='sqrtn')
-    aae(reference_output_scipy, computed_output_dumb, decimal=10)
