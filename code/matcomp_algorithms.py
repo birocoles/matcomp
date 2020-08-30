@@ -256,15 +256,17 @@ def _FT_recursive(data, conjugate=False):
 # Householder transformation
 def House_vector(x, check_input=True):
     '''
-    Compute the real Householder vector (Golub and Van Loan, 2013,
-    Algorithm 5.1.1, p. 236) v, with v[0] = 1, such that matrix
-    P = I - beta outer(v,v) (Householder reflection) is orthogonal
-    and Px = norm_2(x) e_1.
+    Compute the real N x 1 Householder vector (Golub and Van Loan,
+    2013, Algorithm 5.1.1, p. 236) v, with v[0] = 1, such that N x N
+    matrix P = I - beta outer(v,v) (Householder reflection) is
+    orthogonal and Px = norm_2(x) u_0, where u_0 is an N x 1 vector
+    with all elements equal to zero, except the 0th, that is equal
+    to 1.
 
     Parameters
     ----------
     x : array 1D
-        Vector perpendicular to the Householder vector.
+        N x 1 vector perpendicular to the Householder vector.
 
     check_input : boolean
         If True, verify if the input is valid. Default is True.
@@ -348,6 +350,7 @@ def House_matvec(A, v, beta, order='AP', check_input=True):
 
         return C
 
+
 # Givens rotations
 def Givens_rotation(a, b, check_input=True):
     '''
@@ -389,14 +392,14 @@ def Givens_rotation(a, b, check_input=True):
 
 def Givens_matvec(A, c, s, i, k, order='AG', check_input=True):
     '''
-    Compute the matrix-matrix product AG or GTA, where G
-    is a Givens rotation G(i, k, theta) (Golub and Van Loan, 2013,
+    Update matrix A with the matrix-matrix product AG or GTA, where
+    G is a Givens rotation G(i, k, theta) (Golub and Van Loan, 2013,
     p. 241).
 
     Parameters
     ----------
     A : array 2D
-        Matrix used to compute the product.
+        Matrix to be updated.
 
     c, s : scalars
         Cosine and Sine of theta forming the Givens rotation matrix.
@@ -410,11 +413,6 @@ def Givens_matvec(A, c, s, i, k, order='AG', check_input=True):
 
     check_input : boolean
         If True, verify if the input is valid. Default is True.
-
-    Returns
-    -------
-    C : array 2D
-        Matrix-matrix product.
     '''
     A = np.asarray(A)
     if check_input is True:
@@ -422,7 +420,7 @@ def Givens_matvec(A, c, s, i, k, order='AG', check_input=True):
         assert np.isscalar(c) and np.isscalar(s), 'c and s must be scalars'
         assert isinstance(i, int) and (i >= 0), 'i must be a an integer >= 0'
         assert isinstance(k, int) and (k >= 0), 'k must be a an integer >= 0'
-        assert (c**2 + s**2) == 1, 'c**2 + s**2 must be equal to 1'
+        assert np.allclose((c**2 + s**2), 1), 'c**2 + s**2 must be equal to 1'
         assert order in ['AG', 'GTA'], "order must be 'AG' or 'GTA'"
 
     M = A.shape[0]
@@ -430,16 +428,14 @@ def Givens_matvec(A, c, s, i, k, order='AG', check_input=True):
     G = np.array([[ c, s],
                   [-s, c]])
     if order is 'AG':
-        assert (i < N) and (k < N), 'i and k must be < N'
-        C = np.dot(A[:,[i,k]], G)
+        assert (i <= N) and (k <= N), 'i and k must be < N'
+        A[:,[i,k]] = np.dot(A[:,[i,k]], G)
     else:
-        assert (i < M) and (k < M), 'i and k must be < M'
-        C = np.dot(G.T, A[[i,k],:])
-
-    return C
+        assert (i <= M) and (k <= M), 'i and k must be < M'
+        A[[i,k],:] = np.dot(G.T, A[[i,k],:])
 
 
-def cs2rho(c, s, check_input=True):
+def Givens_cs2rho(c, s, check_input=True):
     '''
     Compute a single float rho representing the matrix Z
     | c   s |
@@ -461,7 +457,7 @@ def cs2rho(c, s, check_input=True):
     '''
     if check_input is True:
         assert np.isscalar(c) and np.isscalar(s), 'c and s must be scalars'
-        assert (c**2 + s**2) == 1, 'c**2 + s**2 must be equal to 1'
+        assert np.allclose((c**2 + s**2), 1), 'c**2 + s**2 must be equal to 1'
 
     if c == 0:
         rho = 1
@@ -473,15 +469,15 @@ def cs2rho(c, s, check_input=True):
     return rho
 
 
-def rho2cs(rho, check_input=True):
+def Givens_rho2cs(rho, check_input=True):
     '''
     Compute c and s from the representing scalar rho
-    obtained with function cs2rho (Golub and Van Loan, 2013, p. 242).
+    obtained with function Givens_cs2rho (Golub and Van Loan, 2013, p. 242).
 
     Parameters
     ----------
     rho : scalar
-        Representing scalar obtained with function cs2rho.
+        Representing scalar obtained with function Givens_cs2rho.
 
     check_input : boolean
         If True, verify if the input is valid. Default is True.
@@ -508,11 +504,12 @@ def rho2cs(rho, check_input=True):
 
 
 # QR factorization
-def House_QR(A, check_input=True):
+def QR_House(A, check_input=True):
     '''
-    Compute the Householder matrices H0, ..., HN-1 such that
-    Q = H0 H1 ... HN-1 is orthogonal and QTA = R, where A is an M x N
-    matrix, M >= N, and R is upper triangular. The upper triangular part
+    Compute the M x M Householder matrices Hj such that
+    Q = H0 H1 ... HN-1 is an M x M orthogonal matrix and QTA = R,
+    where A is an M x N matrix, M >= N, and R is an M x N upper
+    triangular matrix. The upper triangular part
     of A is overwritten by R and the lower triangular part below the
     main diagonal is overwritten by the Householder vectors associated
     with the Householder matrices (Golub and Van Loan, 2013, Algorithm
@@ -535,22 +532,25 @@ def House_QR(A, check_input=True):
     M = A.shape[0]
     N = A.shape[1]
     for j in range(N):
-        v, beta = House_vector(x=A[j:,j], check_input=True)
+        v, beta = House_vector(x=A[j:,j], check_input=False)
         A[j:,j:] = House_matvec(A=A[j:,j:], v=v, beta=beta,
-                               order='PA', check_input=True)
-        if j < M:
-            A[j+1:,j] = v[1:M-j+1]
+                                order='PA', check_input=False)
+        # if j < M:
+        #     A[j+1:,j] = v[1:M-j+2]
+        # j is always lower than M
+        #A[j+1:,j] = v[1:M-j+2]
+        A[j+1:,j] = v[1:]
 
 
-def Q_from_A(A, check_input=True):
+def Q_from_QR_House(A, check_input=True):
     '''
-    Retrieve matrix Q from the lower triangle of the M x N
-    matrix A computed with function House_QR.
+    Retrieve the M x M matrix Q from the lower triangle of the
+    M x N matrix A computed with function QR_House.
 
     Parameters
     ----------
     A : array 2D
-        Matrix returned by function House_QR.
+        M x N matrix returned by function QR_House.
 
     check_input : boolean
         If True, verify if the input is valid. Default is True.
@@ -558,8 +558,9 @@ def Q_from_A(A, check_input=True):
     Returns
     -------
     Q : array 2D
-        Orthogonal matrix formed by the product of N Householder
-        matrices, where N is the number of columns of A.
+        M x M orthogonal matrix formed by the product of
+        N M x M Householder matrices, where N is the number
+        of columns of A.
     '''
     A = np.asarray(A)
     if check_input is True:
@@ -567,16 +568,517 @@ def Q_from_A(A, check_input=True):
 
     M = A.shape[0]
     N = A.shape[1]
-    Q = np.eye(N=M, M=N)
-    #Q = np.identity(M)
-    #Q[:,N:] = 0
+    # Compute the full M x M Q matrix
+    Q = np.identity(M)
     for j in range(N-1,-1,-1):
         v = np.hstack([1, A[j+1:,j]])
         beta = 2/(1 + np.dot(A[j+1:,j],A[j+1:,j]))
         Q[j:,j:] = House_matvec(A=Q[j:,j:], v=v, beta=beta,
-                                order='PA', check_input=True)
+                                order='PA', check_input=False)
 
     return Q
+
+
+def QR_Givens(A, check_input=True):
+    '''
+    Compute the Givens rotations Gj such that
+    Q = G0G1...Gt is an M x M orthogonal matrix and QTA = R,
+    where A is an M x N matrix, M >= N, and R is an M x N upper
+    triangular matrix. The upper triangular part
+    of A is overwritten by R and the lower triangular part below the
+    main diagonal is overwritten by the representing scalar obtained with
+    function cs2rho (Golub and Van Loan, 2013, Algorithm 5.2.4, p. 252).
+
+    Parameters
+    ----------
+    A : array 2D
+        M x N matrix (M >= N) to be factored.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+        assert A.shape[0] >= A.shape[1], 'A must be M x N, where M >= N'
+
+    M = A.shape[0]
+    N = A.shape[1]
+    for j in range(N):
+        for i in range(M-1, j, -1):
+            c, s = Givens_rotation(a=A[i-1,j], b=A[i,j], check_input=False)
+            #Givens_matvec(A, c, s, i-1, i, order='GTA', check_input=False)
+            # By passing only the j: columns, the stored representing factors
+            # aren't 'destroyed' by the algorithm
+            Givens_matvec(A[:,j:], c, s, i-1, i, order='GTA', check_input=False)
+            A[i,j] = Givens_cs2rho(c, s, check_input=False)
+
+
+def Q_from_QR_Givens(A, check_input=True):
+    '''
+    Retrieve the M x M matrix Q from the lower triangle of the
+    M x N matrix A computed with function QR_Givens by using the
+    function rho2cs.
+
+    Parameters
+    ----------
+    A : array 2D
+        M x N matrix returned by function QR_Givens.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    Q : array 2D
+        M x M orthogonal matrix formed by the product of N
+        M x M Givens rotation matrices, where N is the number
+        of columns of A.
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+
+    M = A.shape[0]
+    N = A.shape[1]
+    Q = np.identity(M)
+    for j in range(N):
+        for i in range(M-1, j, -1):
+            c, s = Givens_rho2cs(rho=A[i,j], check_input=False)
+            Givens_matvec(Q, c, s, i-1, i, order='AG', check_input=False)
+
+    return Q
+
+
+def QR_MGS(A, check_input=True):
+    '''
+    Compute the QR factorization of a full-column rank M x N
+    matrix A, where Q1 is an M x N orthogonal matrix and R1 is
+    an N x N upper triangular matrix by applying the Modified
+    Gram-Schmidt method (Golub and Van Loan, 2013, Algorithm 5.2.6,
+    p. 255).
+
+    Parameters
+    ----------
+    A : array 2D
+        Full-column rank M x N matrix (M >= N) to be factored.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    Q1 : array 2D
+         M x N orthogonal matrix.
+
+    R1 : array 2D
+        N x N upper triangular matrix.
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+        assert A.shape[0] >= A.shape[1], 'A must be M x N, where M >= N'
+
+    M = A.shape[0]
+    N = A.shape[1]
+
+    Q1 = A.copy()
+    R1 = np.zeros((N,N))
+    for k in range(N):
+        R1[k,k] = np.linalg.norm(Q1[:,k])
+        Q1[:,k] = Q1[:,k]/R1[k,k]
+        for j in range(k+1,N):
+            R1[k,j] = np.dot(Q1[:,k],Q1[:,j])
+            Q1[:,j] -= R1[k,j]*Q1[:,k]
+
+    return Q1, R1
+
+
+# Hessenberg QR step
+#def H_plus_RQ()
+
+
+# Bidiagonalization
+
+# def House_bidiag(A, check_input=True):
+#     '''
+#     Given an M x N matrix A, the algorithm overwrites A with UTAV = B,
+#     where B is upper bidiagonal, and U and V are orthogonal matrices
+#     defined as products of Householder matrices (Golub and Van Loan, 2013,
+#     Algorithm 5.4.2, p. 284-285).
+#
+#     Parameters
+#     ----------
+#     A : array 2D
+#         Matrix used to compute the product.
+#
+#     check_input : boolean
+#         If True, verify if the input is valid. Default is True.
+#     '''
+#     A = np.asarray(A)
+#     if check_input is True:
+#         assert A.ndim == 2, 'A must be a matrix'
+#         assert A.shape[0] >= A.shape[1], 'A must be M x N, where M >= N'
+#
+#     M = A.shape[0]
+#     N = A.shape[1]
+#
+#     for j in range(N):
+#         v, beta = House_vector(A[j:,j])
+#         A[j:,j:] = House_matvec(A=A[j:,j:], v=v, beta=beta,
+#                                 order='PA', check_input=False)
+#         A[j+1:,j] = v[1:M-j+2]
+#         if j <= N-2:
+#             v, beta = House_vector(A[j,j+1:])
+#             A[j:,j+1:] = House_matvec(A=A[j:,j+1:], v=v, beta=beta,
+#                                       order='AP', check_input=False)
+#             A[j,j+2:] = v[1:N-j+1]
+#
+#
+# def UV_from_B(B, check_input=True):
+#     '''
+#     Retrieve the M x N orthogonal matrix U and the N x N
+#     orthogonal matrix V from the lower and upper triangle
+#     of B computed with function House_bidiag.
+#
+#     Parameters
+#     ----------
+#     B : array 2D
+#         M x N bidiagonal matrix computed with House_bidiag.
+#
+#     check_input : boolean
+#         If True, verify if the input is valid. Default is True.
+#
+#     Returns
+#     -------
+#     U : array 2D
+#         M x M orthogonal matrix formed by the product of
+#         N M x M Householder matrices, where N is the number
+#         of columns of B.
+#
+#     V : array 2D
+#         N x N orthogonal matrix formed by the product of
+#         N-2 N x N Householder matrices, where N is the number
+#         of columns of B.
+#     '''
+#     B = np.asarray(B)
+#     if check_input is True:
+#         assert B.ndim == 2, 'B must be a matrix'
+#
+#     M = B.shape[0]
+#     N = B.shape[1]
+#     U = np.identity(M)
+#     for j in range(N):
+#         v = np.hstack([1, B[j+1:,j]])
+#         beta = 2/(1 + np.dot(B[j+1:,j],B[j+1:,j]))
+#         U[j:,j:] = House_matvec(A=U[j:,j:], v=v, beta=beta,
+#                                 order='PA', check_input=False)
+#
+#     return U
+
+
+def Golub_Kahan_bidiag(A, check_input=True):
+    '''
+    Given an M x N full-column rank matrix A, the algorithm
+    computes the non-null elements of an upper bidiagonal matrix
+    B = UBTAVB, where UB is an M x M orthogonal matrix and VB is an
+    N x N orthogonal matrix (Golub and Van Loan, 2013, Algorithm
+    10.4.1, p. 572). For convenience, the last column of UB is not
+    computed, so that B[:-1] = UBTAVB.
+
+    Parameters
+    ----------
+    A : array 2D
+        M x N full-column rank matrix to be factored.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    alpha : array 2D
+        N x 1 vector containing the main diagonal of B.
+
+    beta : array 2D
+        (N-1) x 1 vector containing the upper diagonal of B.
+
+    UB : array 2D
+         M x N orthogonal matrix (the last columns are not computed).
+
+    VB : array 2D
+         N x N orthogonal matrix.
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+        assert A.shape[0] >= A.shape[1], 'A must be M x N, where M >= N'
+
+    M = A.shape[0]
+    N = A.shape[1]
+
+    k = 0
+    beta = 1
+    beta_list = []
+    alpha_list = []
+    v = np.zeros(N)
+    v[0] = 1
+    VB = []
+    u = np.zeros(M)
+    UB = []
+    p = v
+    for k in range(N):
+        v = p/beta
+        VB.append(v)
+        r = np.dot(A,v) - beta*u
+        alpha = np.linalg.norm(r)
+        alpha_list.append(alpha)
+        u = r/alpha
+        UB.append(u)
+        p = np.dot(A.T,u) - alpha*v
+        beta = np.linalg.norm(p)
+        beta_list.append(beta)
+
+    alpha_list = np.array(alpha_list)
+    beta_list = np.array(beta_list)[:-1]
+    UB = np.vstack(UB).T
+    VB = np.vstack(VB).T
+
+    return alpha_list, beta_list, UB, VB
+
+
+# Tridiagonalization
+
+def House_tridiag(A, check_input=True):
+    '''
+    Given an N x N symmetric matrix A, the algorithm overwrites
+    A with a tridiagonal matrix T = Q^T A Q, where Q is the product
+    of Householder matrices H1H2...HN-2 (Golub and Van Loan, 2013,
+    Algorithm 8.3.1, p. 459).
+
+    Parameters
+    ----------
+    A : array 2D
+        N x N symmetric matrix to be factored.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+        assert np.all(A.T == A), 'A must be symmetric'
+
+    N = A.shape[0]
+
+    for k in range(N-2):
+        v, beta = House_vector(A[k+1:,k])
+
+        # original algoritmh from book
+        # it doesn't work for me
+        # p = beta*np.dot(A[k+1:,k+1:],v)
+        # w = p + (beta*np.dot(p,v)/2)*v
+        # A[k+1,k] = np.linalg.norm(A[k+1:,k])
+        # A[k,k+1] = A[k+1,k]
+        # A[k+1:,k+1:] = A[k+1:,k+1:] - np.outer(v,w) - np.outer(w,v)
+
+        # zero kth column
+        A[k+1:,k:] = House_matvec(A=A[k+1:,k:], v=v, beta=beta,
+                                 order='PA', check_input= True)
+        # zero kth row
+        A[k:,k+1:] = House_matvec(A=A[k:,k+1:], v=v, beta=beta,
+                                 order='AP', check_input=True)
+        # store the Householder vectors
+        A[k+2:,k] = v[1:]
+
+
+def Q_from_House_tridiag(A, check_input=True):
+    '''
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+        #assert np.all(A.T == A), 'A must be symmetric'
+
+    N = A.shape[1]
+
+    Q = np.identity(N)
+    for k in range(N-3,-1,-1):
+    #for k in range(N-2):
+        v = np.hstack([1, A[k+2:,k]])
+        beta = 2/(1 + np.dot(A[k+2:,k],A[k+2:,k]))
+        Q[k+1:,k:] = House_matvec(A=Q[k+1:,k:], v=v, beta=beta,
+                                  order='PA', check_input=False)
+
+    return Q
+
+
+# def Lanczos_tridiag():
+#     '''
+#     Given an N x N symmetric matrix A, the algorithm computes an
+#     orthonormal matrix Q and and a symmetric tridiagonal matrix T
+#     such that ... (Golub and Van Loan, 2013, Algorithm 10.1.1, p. 549).
+#
+#     Parameters
+#     ----------
+#     A : array 2D
+#         N x N symmetric matrix to be factored.
+#
+#     check_input : boolean
+#         If True, verify if the input is valid. Default is True.
+#
+#     '''
+#     A = np.asarray(A)
+#     if check_input is True:
+#         assert A.ndim == 2, 'A must be a matrix'
+#         assert np.all(A.T == A), 'A must be symmetric'
+#
+#     N = A.shape[0]
+#
+#     Q = np.identity(N)
+#     for k in range(N-2):
+#         v, beta = House_vector(A[k+1:,k])
+#         Q[k+1:,k+1:] = House_matvec(A=Q[k+1:,k+1:], v=v, beta=beta,
+#                                     order='AP', check_input=True)
+#         p = beta*np.dot(A[k+1:,k+1:],v)
+#         # w = p - (beta*np.dot(p,v)/2)*v
+#         W = beta*np.dot(p,v)*np.outer(v,v)
+#         A[k+1,k] = np.linalg.norm(A[k+1:,k])
+#         A[k,k+1] = A[k+1,k]
+#         # A[k+1:,k+1:] = A[k+1:,k+1:] - np.outer(v,w) - np.outer(w,v)
+#         A[k+1:,k+1:] = A[k+1:,k+1:] + W - np.outer(v,p) - np.outer(p,v)
+#         # store the Householder vectors
+#         #A[k+2:,k] = v[1:]
+#
+#     return Q
+
+
+# Symmetric QR step
+def imp_symm_QR_step_shift(T, check_input=True):
+    '''
+    (Golub and Van Loan, 2013, Algorithm 8.3.2, p. 462).
+    '''
+    T = np.asarray(T)
+    assert T.ndim == 2, 'T must be a matrix'
+    d = 0.5*(T[-2,-2] - T[-1,-1])
+    mu = T[-1,-1] - (T[-1,-2]**2)/(d + np.sign(d)*np.sqrt(d**2 + T[-1,-2]**2))
+    x = T[0,0] - mu
+    z = T[1,0]
+    N = T.shape[0]
+    Z = np.identity(N)
+    # k from 0 to N-3
+    for k in range(N-2):
+        c, s = Givens_rotation(a=x, b=z, check_input=True)
+        Givens_matvec(T, c, s, k, k+1, order='AG', check_input=True)
+        Givens_matvec(T, c, s, k, k+1, order='GTA', check_input=True)
+        x = T[k+1,k]
+        z = T[k+2,k]
+        Givens_matvec(Z, c, s, k, k+1, order='AG', check_input=True)
+    # k = N-2
+    c, s = Givens_rotation(a=x, b=z, check_input=True)
+    Givens_matvec(T, c, s, k, k+1, order='AG', check_input=True)
+    Givens_matvec(T, c, s, k, k+1, order='GTA', check_input=True)
+    Givens_matvec(Z, c, s, k, k+1, order='AG', check_input=True)
+
+    return Z, mu
+
+
+
+# Singular Value Decomposition
+def Golub_Kahan_SVD_step(alpha, beta, check_input=True):
+    '''
+    '''
+    alpha = np.asarray(alpha)
+    beta = np.asarray(beta)
+    if check_input is True:
+        assert alpha.ndim == 1, 'alpha must be a vector'
+        assert beta.ndim == 1, 'beta must be a vector'
+        assert alpha.size == beta.size+1, 'alpha size must be = beta size + 1'
+        assert np.all(alpha != 0), 'alpha cannot have zeros'
+        assert np.all(beta != 0), 'beta cannot have zeros'
+
+    B = np.diag(v=alpha, k=0) + np.diag(v=beta, k=1)
+    T = np.dot(B.T,B)
+
+    a_n_1 = T[-2,-2]
+    b_n_1 = T[-2,-1]
+    a_n   = T[-1,-1]
+    d = (a_n_1 - a_n)/2
+    mu = a_n + d - np.sign(d)*np.sqrt(d**2 + b_n_1**2)
+
+    y = T[0,0] - mu
+    z = T[0,1]
+
+    N = alpha.size
+
+    for k in range(N-2):
+        c, s = Givens_rotation(a=y, b=z, check_input=True)
+        Givens_matvec(B, c, s, k, k+1, order='AG', check_input=True)
+        y = B[k,k]
+        z = B[k+1,k]
+        c, s = Givens_rotation(a=y, b=z, check_input=True)
+        Givens_matvec(B, c, s, k, k+1, order='GTA', check_input=True)
+        y = B[k,k+1]
+        z = B[k,k+2]
+
+    k = N-2
+    c, s = Givens_rotation(a=y, b=z, check_input=True)
+    Givens_matvec(B, c, s, k, k+1, order='AG', check_input=True)
+    y = B[k,k]
+    z = B[k+1,k]
+    c, s = Givens_rotation(a=y, b=z, check_input=True)
+    Givens_matvec(B, c, s, k, k+1, order='GTA', check_input=True)
+
+    return B
+
+
+def SVD(A, epsilon, check_input=True):
+    '''
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+        assert A.shape[0] >= A.shape[1], 'A must be M x N, where M >= N'
+        assert np.isscalar(epsilon), 'epsilon must be a scalar'
+        assert (epsilon > 0) and (epsilon < 1), 'epsilon must be > 0 and < 1'
+
+    M = A.shape[0]
+    N = A.shape[1]
+
+    # Compute the bidiagonal matrix B from A
+    alpha_B, beta_B, U_B, V_B = Golub_Kahan_bidiag(A)
+
+    # Create B
+    B = np.diag(v=alpha_B,k=0) + np.diag(v=beta_B,k=1)
+
+    q = 0
+    while q != N:
+        #print(q)
+        # Set B[i, i+1] = 0
+        for i in range(N-1):
+            condition = epsilon*(np.abs(B[i,i]) + np.abs(B[i+1,i+1]))
+            if np.abs(B[i, i+1]) <= condition:
+                B[i, i+1] = 0
+        # smallest p and largest q defining B11, B22, and B33
+        aux = np.nonzero(np.diag(B,k=1))[0]
+        if aux.size >= 2:
+            p, q = aux[[0, -1]]
+            q = N - q - 2
+        else:
+            return B
+
+        if q < N:
+            # indices of null elements in diagonal of B22
+            zeros_diag_B22 = np.where(np.diag(B[p:N-q,p:N-q]) == 0)[0]
+            if zeros_diag_B22.size > 0:
+                # set corresponding superdiagonal elements equal to zero
+                B[p:N-q,p:N-q][zeros_diag_B22,zeros_diag_B22+1] = 0
+            else:
+                alpha_B22 = np.diag(B[p:N-q,p:N-q], k=0)
+                beta_B22 = np.diag(B[p:N-q,p:N-q], k=1)
+                B[p:N-q,p:N-q] = Golub_Kahan_SVD_step(alpha=alpha_B22,
+                                                      beta=beta_B22)
+    return B
 
 
 # steepst decent method

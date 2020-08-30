@@ -157,7 +157,8 @@ def test_DFT_parseval_theorem():
     aae(energy_data, energy_X_dumb, decimal=10)
     aae(energy_data, energy_X_recursive, decimal=10)
 
-# Householder Vector
+# Householder transformation
+
 def test_House_vector_parameter_beta():
     'verify that beta = 2/dot(v,v)'
     np.random.seed(23)
@@ -174,6 +175,23 @@ def test_House_vector_orthogonal_reflection():
     P = np.identity(a.size) - beta*np.outer(v,v)
     aae(np.dot(P.T,P), np.dot(P,P.T), decimal=10)
     aae(np.dot(P.T,P), np.identity(a.size), decimal=10)
+
+
+def test_House_vector_reflection_property():
+    'verify that Px = norm_2(x) u_0'
+    np.random.seed(43)
+    # real vector
+    x = np.random.rand(7)
+    v, beta = mca.House_vector(x=x)
+    # compute the Householder reflection
+    P = np.identity(x.size) - beta*np.outer(v,v)
+
+    x_norm_2 = np.linalg.norm(x)
+    u_0 = np.zeros_like(x)
+    u_0[0] = 1
+
+    aae(np.dot(P,x), x_norm_2*u_0, decimal=10)
+
 
 def test_House_vector_matvec_matmat_reflection():
     'verify matrix-matrix product with Householder reflections'
@@ -192,7 +210,8 @@ def test_House_vector_matvec_matmat_reflection():
     aae(AP1, AP2, decimal=10)
 
 
-# Givens rotations
+# Givens transformation
+
 def test_Givens_rotation_definition():
     'verify if Givens rotation satisfies its definition'
     np.random.rand(3)
@@ -241,7 +260,7 @@ def test_Givens_matvec_matmat():
     G[k,i] = -s
     G[k,k] = c
     A2 = A.copy()
-    A2[[i,k],:] = mca.Givens_matvec(A=A, c=c, s=s, i=i, k=k, order='GTA')
+    mca.Givens_matvec(A=A2, c=c, s=s, i=i, k=k, order='GTA')
     aae(A2, np.dot(G.T,A), decimal=10)
     # verify AG
     G = np.identity(N)
@@ -250,54 +269,209 @@ def test_Givens_matvec_matmat():
     G[k,i] = -s
     G[k,k] = c
     A2 = A.copy()
-    A2[:,[i,k]] = mca.Givens_matvec(A=A, c=c, s=s, i=i, k=k, order='AG')
+    mca.Givens_matvec(A=A2, c=c, s=s, i=i, k=k, order='AG')
     aae(A2, np.dot(A,G), decimal=10)
 
 
-def test_cs2rho_rho2cs():
+def test_Givens_cs2rho_Givens_rho2cs():
     'verify consistency'
     np.random.seed(11)
     a = 10*np.random.rand()
     b = 10*np.random.rand()
     c, s = mca.Givens_rotation(a=a, b=b)
-    rho = mca.cs2rho(c=c, s=s)
-    c2, s2 = mca.rho2cs(rho=rho)
+    rho = mca.Givens_cs2rho(c=c, s=s)
+    c2, s2 = mca.Givens_rho2cs(rho=rho)
     aae(c, c2, decimal=10)
     aae(s, s2, decimal=10)
 
 
-# QR factorization
-def test_House_QR_Q_from_A_Q_decomposition():
+# QR decomposition
+
+def test_QR_House_Q_from_QR_House_decomposition():
     'verify the computed Q and R matrices'
     np.random.seed(7)
     M = 6
     N = 5
     A = np.random.rand(M,N)
     A2 = A.copy()
-    mca.House_QR(A2)
-    Q = mca.Q_from_A(A=A2)
+    mca.QR_House(A2)
+    Q = mca.Q_from_QR_House(A=A2)
     R = np.triu(A2)
-    aae(A, np.dot(Q, R[:N,:]), decimal=10)
+    aae(A, np.dot(Q, R), decimal=10)
 
 
-def test_House_QR_Q_from_A_Q_orthogonal():
+def test_QR_House_Q_from_QR_House_orthogonal():
     'verify the orthogonality of the computed Q'
     np.random.seed(78)
     M = 6
     N = 5
     A = np.random.rand(M,N)
-    mca.House_QR(A)
-    Q = mca.Q_from_A(A=A)
-    aae(np.identity(N), np.dot(Q.T,Q), decimal=10)
+    mca.QR_House(A)
+    Q = mca.Q_from_QR_House(A=A)
+    aae(np.identity(M), np.dot(Q.T,Q), decimal=10)
 
 
-def test_House_QR_Q_from_A_R_Cholesky():
-    'verify that R is the transpose of the Cholesky factor'
+def test_QR_House_Cholesky():
+    'verify that R is the transpose of the Cholesky factor of ATA'
     np.random.seed(8)
     M = 6
     N = 5
     A = np.random.rand(M,N)
     ATA = np.dot(A.T,A)
-    mca.House_QR(A)
-    R = np.triu(A)[:N,:].T
-    aae(ATA, np.dot(R,R.T), decimal=10)
+    mca.QR_House(A)
+    R = np.triu(A)
+    aae(ATA, np.dot(R.T,R), decimal=10)
+
+
+def test_QR_Givens_Q_from_QR_Givens_decomposition():
+    'verify the computed Q and R matrices'
+    np.random.seed(7)
+    M = 6
+    N = 5
+    A = np.random.rand(M,N)
+    A2 = A.copy()
+    mca.QR_Givens(A2)
+    Q = mca.Q_from_QR_Givens(A=A2)
+    R = np.triu(A2)
+    aae(A, np.dot(Q, R), decimal=10)
+
+
+def test_QR_Givens_Q_from_QR_Givens_orthogonal():
+    'verify the orthogonality of the computed Q'
+    np.random.seed(78)
+    M = 6
+    N = 5
+    A = np.random.rand(M,N)
+    mca.QR_Givens(A)
+    Q = mca.Q_from_QR_Givens(A=A)
+    aae(np.identity(M), np.dot(Q.T,Q), decimal=10)
+
+
+def test_QR_Givens_Cholesky():
+    'verify that R is the transpose of the Cholesky factor of ATA'
+    np.random.seed(8)
+    M = 6
+    N = 5
+    A = np.random.rand(M,N)
+    ATA = np.dot(A.T,A)
+    mca.QR_Givens(A)
+    R = np.triu(A)
+    aae(ATA, np.dot(R.T,R), decimal=10)
+
+
+def test_QR_MGS_decomposition():
+    'verify the computed Q and R matrices'
+    np.random.seed(6)
+    M = 6
+    N = 5
+    A = np.random.rand(M,N)
+    Q1, R1 = mca.QR_MGS(A)
+    aae(A, np.dot(Q1, R1), decimal=10)
+
+
+def test_QR_MGS_Q_orthogonal():
+    'verify the orthogonality of the computed Q'
+    np.random.seed(1)
+    M = 6
+    N = 5
+    A = np.random.rand(M,N)
+    Q1, R1 = mca.QR_MGS(A)
+    aae(np.identity(N), np.dot(Q1.T,Q1), decimal=10)
+
+
+def test_QR_MCS_Cholesky():
+    'verify that R is the transpose of the Cholesky factor of ATA'
+    np.random.seed(98)
+    M = 6
+    N = 5
+    A = np.random.rand(M,N)
+    ATA = np.dot(A.T,A)
+    Q1, R1 = mca.QR_MGS(A)
+    aae(ATA, np.dot(R1.T,R1), decimal=10)
+
+
+# Tridiagonalization
+def test_House_tridiag_symmetry():
+    'verify if the factored form is symmetric'
+    np.random.seed(79)
+    N = 7
+    A = np.random.rand(N,N)
+    A = A.T + A
+    mca.House_tridiag(A)
+    superdiag = np.diag(v=A,k=1)
+    subdiag = np.diag(v=A,k=-1)
+    aae(superdiag, subdiag, decimal=10)
+
+
+def test_House_tridiag_zeros():
+    'verify if the upper elements are zero'
+    np.random.seed(3)
+    N = 7
+    A = np.random.rand(N,N)
+    A = A.T + A
+    mca.House_tridiag(A)
+    U = np.triu(A, k=2)
+    aae(np.zeros((N,N)), U, decimal=10)
+
+
+def test_House_tridiag_decomposition():
+    'verify if the factored form retrive the original matrix'
+    np.random.seed(5)
+    N = 7
+    A = np.random.rand(N,N)
+    A = A.T + A
+    Tridiag = A.copy()
+    mca.House_tridiag(Tridiag)
+    Q = mca.Q_from_House_tridiag(Tridiag)
+    Tridiag = np.triu(Tridiag, k=-1)
+    aae(A, np.linalg.multi_dot([Q, Tridiag, Q.T]), decimal=10)
+
+# Bidiagonalization
+
+
+def test_Golub_Kahan_bidiag_decomposition():
+    'verify if the factored form retrieves the original matrix'
+    np.random.seed(72)
+    M = 7
+    N = 4
+    A = np.random.rand(M,N)
+    alpha, beta, U, V = mca.Golub_Kahan_bidiag(A)
+    # create the bidiagonal matrix
+    # without its last M-N zero rows
+    B = np.diag(v=alpha, k=0) + np.diag(v=beta, k=1)
+    B2 = np.dot(U.T,A).dot(V)
+    aae(B, B2, decimal=10)
+
+
+def test_Golub_Kahan_bidiag_U_orthogonal():
+    'verify if the computed U are orthogonal'
+    np.random.seed(42)
+    M = 6
+    N = 5
+    A = np.random.rand(M,N)
+    alpha, beta, U, V = mca.Golub_Kahan_bidiag(A)
+    aae(np.identity(N), np.dot(U.T,U), decimal=10)
+
+
+def test_Golub_Kahan_bidiag_V_orthogonal():
+    'verify if the computed V are orthogonal'
+    np.random.seed(42)
+    M = 7
+    N = 5
+    A = np.random.rand(M,N)
+    alpha, beta, U, V = mca.Golub_Kahan_bidiag(A)
+    aae(np.identity(N), np.dot(V.T,V), decimal=10)
+
+
+
+
+
+# def test_computed_versus_retrieved_Q():
+#     'compared Q matrices obtained from QR_Givens and Q_from_QR_Givens'
+#     np.random.seed(78)
+#     M = 6
+#     N = 5
+#     A = np.random.rand(M,N)
+#     Q1 = mca.QR_Givens(A)
+#     Q2 = mca.Q_from_QR_Givens(A)
+#     aae(Q1, Q2, decimal=10)
