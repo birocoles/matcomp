@@ -10,7 +10,7 @@ help:
 
 test:
 	# Run tests using coverage and pytest
-	coverage run -m pytest test_matcomp_algorithms.py
+	coverage run -m pytest test_matcomp_algorithms.py test_functions_intro.py
 	coverage html
 
 report:

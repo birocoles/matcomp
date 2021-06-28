@@ -32,7 +32,7 @@ def scalar_vec_real_dumb(a, x, check_input=True):
     x = np.asarray(x)
     if check_input is True:
         assert a.ndim == 0, 'a must be a scalar'
-        assert x.ndim == 1, 'x must be a 1D'
+        assert x.ndim == 1, 'x must be a 1D array'
 
     result = np.empty_like(x)
     for i in range(x.size):
@@ -70,7 +70,7 @@ def scalar_vec_real_numpy(a, x, check_input=True):
     x = np.asarray(x)
     if check_input is True:
         assert a.ndim == 0, 'a must be a scalar'
-        assert x.ndim == 1, 'x must be a 1D'
+        assert x.ndim == 1, 'x must be a 1D array'
 
     result = a.real*x.real
 
@@ -105,7 +105,7 @@ def scalar_vec_real_numba(a, x, check_input=True):
     x = np.asarray(x)
     if check_input is True:
         assert a.ndim == 0, 'a must be a scalar'
-        assert x.ndim == 1, 'x must be a 1D'
+        assert x.ndim == 1, 'x must be a 1D array'
 
     result = np.empty_like(x)
     for i in range(x.size):
@@ -146,7 +146,7 @@ def scalar_vec_complex(a, x, check_input=True, function='numba'):
     x = np.asarray(x)
     if check_input is True:
         assert a.ndim == 0, 'a must be a scalar'
-        assert x.ndim == 1, 'x must be a 1D'
+        assert x.ndim == 1, 'x must be a 1D array'
 
     scalar_vec_real = {
         'dumb': scalar_vec_real_dumb,
