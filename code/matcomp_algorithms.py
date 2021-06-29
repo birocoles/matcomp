@@ -305,50 +305,50 @@ def House_vector(x, check_input=True):
 
 
 def House_matvec(A, v, beta, order='AP', check_input=True):
-        '''
-        Compute the matrix-matrix product AP or PA, where P
-        is a Householder matrix P = I - beta outer(v,v)
-        (Golub and Van Loan, 2013, p. 236).
+    '''
+    Compute the matrix-matrix product AP or PA, where P
+    is a Householder matrix P = I - beta outer(v,v)
+    (Golub and Van Loan, 2013, p. 236).
 
-        Parameters
-        ----------
-        A : array 2D
-            Matrix used to compute the product.
+    Parameters
+    ----------
+    A : array 2D
+        Matrix used to compute the product.
 
-        v : array 1D
-            Householder vector.
+    v : array 1D
+        Householder vector.
 
-        beta : scalar
-            Parameter 2/dot(v,v).
+    beta : scalar
+        Parameter 2/dot(v,v).
 
-        order : string
-            If 'PA', it defines the product AP. If 'AP',
-            it defines the product PA. Default is 'AP'.
+    order : string
+        If 'PA', it defines the product AP. If 'AP',
+        it defines the product PA. Default is 'AP'.
 
-        check_input : boolean
-            If True, verify if the input is valid. Default is True.
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
 
-        Returns
-        -------
-        C : array 2D
-            Matrix-matrix product.
-        '''
-        A = np.asarray(A)
-        v = np.asarray(v)
-        if check_input is True:
-            assert A.ndim == 2, 'A must be a matrix'
-            assert v.ndim == 1, 'v must be a vector'
-            assert np.isscalar(beta), 'beta must be a scalar'
-            assert order in ['PA', 'AP'], "order must be 'PA' or 'AP'"
+    Returns
+    -------
+    C : array 2D
+        Matrix-matrix product.
+    '''
+    A = np.asarray(A)
+    v = np.asarray(v)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+        assert v.ndim == 1, 'v must be a vector'
+        assert np.isscalar(beta), 'beta must be a scalar'
+        assert order in ['PA', 'AP'], "order must be 'PA' or 'AP'"
 
-        if order is 'AP':
-            assert A.shape[1] == v.size, 'A shape[1] must be equal to v size'
-            C = A - np.outer(np.dot(A, v), beta*v)
-        else:
-            assert v.size == A.shape[0], 'v size must be equal to A shape[0]'
-            C = A - np.outer(beta*v, np.dot(v, A))
+    if order is 'AP':
+        assert A.shape[1] == v.size, 'A shape[1] must be equal to v size'
+        C = A - np.outer(np.dot(A, v), beta*v)
+    else:
+        assert v.size == A.shape[0], 'v size must be equal to A shape[0]'
+        C = A - np.outer(beta*v, np.dot(v, A))
 
-        return C
+    return C
 
 
 # Givens rotations
@@ -538,7 +538,7 @@ def QR_House(A, check_input=True):
         # if j < M:
         #     A[j+1:,j] = v[1:M-j+2]
         # j is always lower than M
-        #A[j+1:,j] = v[1:M-j+2]
+        # A[j+1:,j] = v[1:M-j+2]
         A[j+1:,j] = v[1:]
 
 
@@ -695,7 +695,101 @@ def QR_MGS(A, check_input=True):
 
 
 # Hessenberg QR step
-#def H_plus_RQ()
+def H_plus_RQ(H, check_input=True):
+    '''
+    If H is an N x N upper Hessenberg matrix, then this algorithm overwrites
+    H with H+ = RQ where H = QR is the QR factorization of H (Golub and Van
+    Loan, 2013, Algorithm 7.4.1, p. 378).
+
+    Parameters
+    ----------
+    H : array 2D
+        N x N upper Hessenberg matrix to be factored.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+    '''
+    H = np.asarray(H)
+    if check_input is True:
+        assert H.ndim == 2, 'H must be a matrix'
+        assert H.shape[0] == H.shape[1], 'H must be square'
+
+    N = H.shape[0]
+
+    for k in range(N-1):
+        c, s = Givens_rotation(a=H[k,k], b=H[k+1,k], check_input=False)
+        Givens_matvec(H, c, s, k, k+1, order='GTA', check_input=False)
+        Givens_matvec(H, c, s, k, k+1, order='AG', check_input=False)
+    # for k in range(N-1):
+    #     Givens_matvec(H, c, s, k, k+1, order='AG', check_input=False)
+
+
+def upper_Hessen_House(A, check_input=True):
+    '''
+    Given an N x N matrix A, overwrites A with an upper Hessenberg matrix
+    H = U0^T A U0 , where U0 is a product of Householder matrices
+    (Golub and Van Loan, 2013, Algorithm 7.4.2, p. 379). The Householder
+    vectors are stored in the lower triangle of A.
+
+    Parameters
+    ----------
+    A : array 2D
+        N x N matrix to be factored.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+        assert A.shape[0] == A.shape[1], 'A must be square'
+
+    N = A.shape[0]
+
+    for k in range(N-1):
+        v, beta = House_vector(x=A[k+1:,k], check_input=False)
+        A[k+1:,k:] = House_matvec(A=A[k+1:,k:], v=v, beta=beta,
+                                  order='PA', check_input=False)
+        A[:,k+1:] = House_matvec(A=A[:,k+1:], v=v, beta=beta,
+                                 order='AP', check_input=False)
+        # store the Householder vectors in the lower triangle of A
+        A[k+2:,k] = v[1:]
+
+
+def U0_from_upper_Hessen_House(A, check_input=True):
+    '''
+    Retrieve the N x N matrix U0 from the lower triangle of the
+    N x N matrix A computed with function upper_Hessen_House.
+
+    Parameters
+    ----------
+    A : array 2D
+        N x N matrix returned by function upper_Hessen_House.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    U0 : array 2D
+        N x N orthogonal matrix formed by the product of
+        (N-2) N x N Householder matrices.
+    '''
+    A = np.asarray(A)
+    if check_input is True:
+        assert A.ndim == 2, 'A must be a matrix'
+
+    N = A.shape[1]
+
+    U0 = np.identity(N)
+    for k in range(N-3,-1,-1):
+    #for k in range(N-2):
+        v = np.hstack([1, A[k+2:,k]])
+        beta = 2/(1 + np.dot(A[k+2:,k],A[k+2:,k]))
+        U0[k+1:,k:] = House_matvec(A=U0[k+1:,k:], v=v, beta=beta,
+                                   order='PA', check_input=False)
+
+    return U0
 
 
 # Bidiagonalization
@@ -853,7 +947,8 @@ def House_tridiag(A, check_input=True):
     Given an N x N symmetric matrix A, the algorithm overwrites
     A with a tridiagonal matrix T = Q^T A Q, where Q is the product
     of Householder matrices H1H2...HN-2 (Golub and Van Loan, 2013,
-    Algorithm 8.3.1, p. 459).
+    Algorithm 8.3.1, p. 459). The Householder vectors are stored in
+    the lower triangle of A.
 
     Parameters
     ----------
@@ -862,7 +957,6 @@ def House_tridiag(A, check_input=True):
 
     check_input : boolean
         If True, verify if the input is valid. Default is True.
-
     '''
     A = np.asarray(A)
     if check_input is True:
@@ -884,21 +978,36 @@ def House_tridiag(A, check_input=True):
 
         # zero kth column
         A[k+1:,k:] = House_matvec(A=A[k+1:,k:], v=v, beta=beta,
-                                 order='PA', check_input= True)
+                                  order='PA', check_input= True)
         # zero kth row
         A[k:,k+1:] = House_matvec(A=A[k:,k+1:], v=v, beta=beta,
-                                 order='AP', check_input=True)
-        # store the Householder vectors
+                                  order='AP', check_input=True)
+        # store the Householder vectors in the lower triangle of A
         A[k+2:,k] = v[1:]
 
 
 def Q_from_House_tridiag(A, check_input=True):
     '''
+    Retrieve the N x N matrix Q from the lower triangle of the
+    N x N matrix A computed with function House_tridiag.
+
+    Parameters
+    ----------
+    A : array 2D
+        N x N matrix returned by function House_tridiag.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    Q : array 2D
+        N x N orthogonal matrix formed by the product of
+        (N-2) N x N Householder matrices.
     '''
     A = np.asarray(A)
     if check_input is True:
         assert A.ndim == 2, 'A must be a matrix'
-        #assert np.all(A.T == A), 'A must be symmetric'
 
     N = A.shape[1]
 
@@ -956,29 +1065,53 @@ def Q_from_House_tridiag(A, check_input=True):
 # Symmetric QR step
 def imp_symm_QR_step_shift(T, check_input=True):
     '''
+    Given an unreduced symmetric tridiagonal N x N matrix T, the algorithm
+    computes a matrix Z = G1 G2 ... GN-1 defined by the product of
+    Givens rotations. The matrix Z^T(T - mu I) is upper triangular and mu is
+    that eigenvalue of T's trailing 2-by-2 principal submatrix close to tnn.
     (Golub and Van Loan, 2013, Algorithm 8.3.2, p. 462).
+
+    Parameters
+    ----------
+    T : array 2D
+        N x N symmetric tridiagonal matrix to be factored.
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    Z : array 2D
+        N x N orthogonal matrix formed by the product of
+        (N-1) N x N Givens rotations.
+    mu : float
+        Eigenvalue of T's trailing 2-by-2 principal submatrix close to tnn.
     '''
     T = np.asarray(T)
-    assert T.ndim == 2, 'T must be a matrix'
+    if check_input is True:
+        assert T.ndim == 2, 'T must be a matrix'
+        assert np.all(np.diag(v=T,k=1) == np.diag(v=T,k=-1)), 'super and \
+subdiagonals must be equal to each other'
+
+    # compute the eigenvalue mu
     d = 0.5*(T[-2,-2] - T[-1,-1])
     mu = T[-1,-1] - (T[-1,-2]**2)/(d + np.sign(d)*np.sqrt(d**2 + T[-1,-2]**2))
+
+    # set starting values for x and z
     x = T[0,0] - mu
     z = T[1,0]
+
     N = T.shape[0]
     Z = np.identity(N)
-    # k from 0 to N-3
     for k in range(N-2):
         c, s = Givens_rotation(a=x, b=z, check_input=True)
-        Givens_matvec(T, c, s, k, k+1, order='AG', check_input=True)
-        Givens_matvec(T, c, s, k, k+1, order='GTA', check_input=True)
-        x = T[k+1,k]
-        z = T[k+2,k]
         Givens_matvec(Z, c, s, k, k+1, order='AG', check_input=True)
+        #Givens_matvec(Z, c, s, k, k+1, order='GTA', check_input=True)
+        x = Z[k+1,k]
+        z = Z[k+2,k]
     # k = N-2
     c, s = Givens_rotation(a=x, b=z, check_input=True)
-    Givens_matvec(T, c, s, k, k+1, order='AG', check_input=True)
-    Givens_matvec(T, c, s, k, k+1, order='GTA', check_input=True)
     Givens_matvec(Z, c, s, k, k+1, order='AG', check_input=True)
+    #Givens_matvec(Z, c, s, k, k+1, order='GTA', check_input=True)
 
     return Z, mu
 

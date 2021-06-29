@@ -1,9 +1,13 @@
 import numpy as np
 import scipy as sp
 from scipy.linalg import dft
+from scipy.fft import fft as spfft
 from numpy.testing import assert_almost_equal as aae
 import pytest
 import matcomp_algorithms as mca
+
+# parameter 'decimal' in assert_almost_equal
+tol=10
 
 # Fourier matrix
 
@@ -17,16 +21,16 @@ def test_DFT_matrix_compare_scipy():
     computed_unscaled = mca.DFT_matrix(N, scale=None, conjugate=False)
     computed_n = mca.DFT_matrix(N, scale='n', conjugate=False)
     computed_sqrtn = mca.DFT_matrix(N, scale='sqrtn', conjugate=False)
-    aae(computed_unscaled, reference_unscaled, decimal=10)
-    aae(computed_n, reference_n, decimal=10)
-    aae(computed_sqrtn, reference_sqrtn, decimal=10)
+    aae(computed_unscaled, reference_unscaled, decimal=tol)
+    aae(computed_n, reference_n, decimal=tol)
+    aae(computed_sqrtn, reference_sqrtn, decimal=tol)
     # Fourier matrix of IDFT
     computed_unscaled = mca.DFT_matrix(N, scale=None, conjugate=True)
     computed_n = mca.DFT_matrix(N, scale='n', conjugate=True)
     computed_sqrtn = mca.DFT_matrix(N, scale='sqrtn', conjugate=True)
-    aae(computed_unscaled, np.conj(reference_unscaled), decimal=10)
-    aae(computed_n, np.conj(reference_n), decimal=10)
-    aae(computed_sqrtn, np.conj(reference_sqrtn), decimal=10)
+    aae(computed_unscaled, np.conj(reference_unscaled), decimal=tol)
+    aae(computed_n, np.conj(reference_n), decimal=tol)
+    aae(computed_sqrtn, np.conj(reference_sqrtn), decimal=tol)
 
 
 def test_DFT_matrix_invalid_scale():
@@ -57,9 +61,9 @@ def test_DFT_matrix_even_odd_decomposition():
     FN_odd = np.vstack([np.dot( Omega, FN_half),
                         np.dot(-Omega, FN_half)])
     # compare the even columns
-    aae(FN[:,0::2], FN_even, decimal=10)
+    aae(FN[:,0::2], FN_even, decimal=tol)
     # comapre the odd columns
-    aae(FN[:,1::2], FN_odd, decimal=10)
+    aae(FN[:,1::2], FN_odd, decimal=tol)
 
     # Test for conjugate matrix
     FN_even = np.vstack([np.conj(FN_half),
@@ -67,9 +71,9 @@ def test_DFT_matrix_even_odd_decomposition():
     FN_odd = np.vstack([np.dot( np.conj(Omega), np.conj(FN_half)),
                         np.dot(-np.conj(Omega), np.conj(FN_half))])
     # compare the even columns
-    aae(np.conj(FN[:,0::2]), FN_even, decimal=10)
+    aae(np.conj(FN[:,0::2]), FN_even, decimal=tol)
     # comapre the odd columns
-    aae(np.conj(FN[:,1::2]), FN_odd, decimal=10)
+    aae(np.conj(FN[:,1::2]), FN_odd, decimal=tol)
 
 
 # Discrete Fourier Transform (DFT) and Inverse Discrete Fourier Transform (IDFT)
@@ -81,7 +85,11 @@ def test_DFT_IDFT_invalid_scale():
     with pytest.raises(AssertionError):
         for invalid_scale in invalid_scales:
             mca.DFT_dumb(x=data, scale=invalid_scale)
+    with pytest.raises(AssertionError):
+        for invalid_scale in invalid_scales:
             mca.IDFT_dumb(X=data, scale=invalid_scale)
+    with pytest.raises(AssertionError):
+        for invalid_scale in invalid_scales:
             mca.DFT_recursive(x=data, scale=invalid_scale)
 
 
@@ -90,14 +98,14 @@ def test_DFT_dumb_compare_scipy_fft_fft():
     np.random.seed(56)
     # scale=None
     data = np.random.rand(15)
-    reference_output_scipy = sp.fft.fft(x=data, norm=None)
+    reference_output_scipy = spfft(x=data, norm=None)
     computed_output_dumb = mca.DFT_dumb(x=data, scale=None)
-    aae(reference_output_scipy, computed_output_dumb, decimal=10)
+    aae(reference_output_scipy, computed_output_dumb, decimal=tol)
     # scale='sqrtn'
     data = np.random.rand(15)
-    reference_output_scipy = sp.fft.fft(x=data, norm='ortho')
+    reference_output_scipy = spfft(x=data, norm='ortho')
     computed_output_dumb = mca.DFT_dumb(x=data, scale='sqrtn')
-    aae(reference_output_scipy, computed_output_dumb, decimal=10)
+    aae(reference_output_scipy, computed_output_dumb, decimal=tol)
 
 
 def test_DFT_recursive_compare_scipy_fft_fft():
@@ -105,14 +113,14 @@ def test_DFT_recursive_compare_scipy_fft_fft():
     np.random.seed(56)
     # scale=None
     data = np.random.rand(2**7)
-    reference_output_scipy = sp.fft.fft(x=data, norm=None)
+    reference_output_scipy = spfft(x=data, norm=None)
     computed_output_recursive = mca.DFT_recursive(x=data, scale=None)
-    aae(reference_output_scipy, computed_output_recursive, decimal=10)
+    aae(reference_output_scipy, computed_output_recursive, decimal=tol)
     scale='sqrtn'
     data = np.random.rand(2**7)
-    reference_output_scipy = sp.fft.fft(x=data, norm='ortho')
+    reference_output_scipy = spfft(x=data, norm='ortho')
     computed_output_recursive = mca.DFT_recursive(x=data, scale='sqrtn')
-    aae(reference_output_scipy, computed_output_recursive, decimal=10)
+    aae(reference_output_scipy, computed_output_recursive, decimal=tol)
 
 
 def test_IDFT_dumb_compare_scipy_fft_ifft():
@@ -122,12 +130,12 @@ def test_IDFT_dumb_compare_scipy_fft_ifft():
     data = np.random.rand(15)+1j*np.random.rand(15)
     reference_output_scipy = sp.fft.ifft(x=data, norm=None)
     computed_output_dumb = mca.IDFT_dumb(X=data, scale='n')
-    aae(reference_output_scipy, computed_output_dumb, decimal=10)
+    aae(reference_output_scipy, computed_output_dumb, decimal=tol)
     scale='sqrtn'
     data = np.random.rand(15)+1j*np.random.rand(15)
     reference_output_scipy = sp.fft.ifft(x=data, norm='ortho')
     computed_output_dumb = mca.IDFT_dumb(X=data, scale='sqrtn')
-    aae(reference_output_scipy, computed_output_dumb, decimal=10)
+    aae(reference_output_scipy, computed_output_dumb, decimal=tol)
 
 
 def test_IDFT_recursive_compare_scipy_fft_ifft():
@@ -137,12 +145,12 @@ def test_IDFT_recursive_compare_scipy_fft_ifft():
     data = np.random.rand(2**7)+1j*np.random.rand(2**7)
     reference_output_scipy = sp.fft.ifft(x=data, norm=None)
     computed_output_recursive = mca.IDFT_recursive(X=data, scale='n')
-    aae(reference_output_scipy, computed_output_recursive, decimal=10)
+    aae(reference_output_scipy, computed_output_recursive, decimal=tol)
     scale='sqrtn'
     data = np.random.rand(2**7)+1j*np.random.rand(2**7)
     reference_output_scipy = sp.fft.ifft(x=data, norm='ortho')
     computed_output_recursive = mca.IDFT_recursive(X=data, scale='sqrtn')
-    aae(reference_output_scipy, computed_output_recursive, decimal=10)
+    aae(reference_output_scipy, computed_output_recursive, decimal=tol)
 
 
 def test_DFT_parseval_theorem():
@@ -154,8 +162,8 @@ def test_DFT_parseval_theorem():
     energy_data = np.dot(a=data, b=data)
     energy_X_dumb = np.dot(a=X_dumb, b=np.conj(X_dumb)).real
     energy_X_recursive = np.dot(a=X_recursive, b=np.conj(X_recursive)).real
-    aae(energy_data, energy_X_dumb, decimal=10)
-    aae(energy_data, energy_X_recursive, decimal=10)
+    aae(energy_data, energy_X_dumb, decimal=tol)
+    aae(energy_data, energy_X_recursive, decimal=tol)
 
 # Householder transformation
 
@@ -164,7 +172,7 @@ def test_House_vector_parameter_beta():
     np.random.seed(23)
     a = np.random.rand(7)
     v, beta = mca.House_vector(x=a)
-    aae(beta, 2/np.dot(v,v), decimal=10)
+    aae(beta, 2/np.dot(v,v), decimal=tol)
 
 def test_House_vector_orthogonal_reflection():
     'verify that the resulting Householder reflection is orthogonal'
@@ -173,8 +181,8 @@ def test_House_vector_orthogonal_reflection():
     a = np.random.rand(7)
     v, beta = mca.House_vector(x=a)
     P = np.identity(a.size) - beta*np.outer(v,v)
-    aae(np.dot(P.T,P), np.dot(P,P.T), decimal=10)
-    aae(np.dot(P.T,P), np.identity(a.size), decimal=10)
+    aae(np.dot(P.T,P), np.dot(P,P.T), decimal=tol)
+    aae(np.dot(P.T,P), np.identity(a.size), decimal=tol)
 
 
 def test_House_vector_reflection_property():
@@ -190,7 +198,7 @@ def test_House_vector_reflection_property():
     u_0 = np.zeros_like(x)
     u_0[0] = 1
 
-    aae(np.dot(P,x), x_norm_2*u_0, decimal=10)
+    aae(np.dot(P,x), x_norm_2*u_0, decimal=tol)
 
 
 def test_House_vector_matvec_matmat_reflection():
@@ -204,10 +212,10 @@ def test_House_vector_matvec_matmat_reflection():
     A = np.random.rand(N,N)
     PA1 = np.dot(P, A)
     PA2 = mca.House_matvec(A=A, v=v, beta=beta, order='PA')
-    aae(PA1, PA2, decimal=10)
+    aae(PA1, PA2, decimal=tol)
     AP1 = np.dot(A, P)
     AP2 = mca.House_matvec(A=A, v=v, beta=beta, order='AP')
-    aae(AP1, AP2, decimal=10)
+    aae(AP1, AP2, decimal=tol)
 
 
 # Givens transformation
@@ -223,7 +231,7 @@ def test_Givens_rotation_definition():
                   [-s, c]])
     v = np.array([a, b])
     Gv = np.dot(G.T, v)
-    aae(Gv[1], 0, decimal=10)
+    aae(Gv[1], 0, decimal=tol)
     # b = 0
     a = 10*np.random.rand()
     b = 0
@@ -232,7 +240,7 @@ def test_Givens_rotation_definition():
                   [-s, c]])
     v = np.array([a, b])
     Gv = np.dot(G.T, v)
-    aae(Gv[1], 0, decimal=10)
+    aae(Gv[1], 0, decimal=tol)
     # |b| > |a|
     a = 7*np.random.rand()
     b = 10*np.random.rand()
@@ -241,7 +249,7 @@ def test_Givens_rotation_definition():
                   [-s, c]])
     v = np.array([a, b])
     Gv = np.dot(G.T, v)
-    aae(Gv[1], 0, decimal=10)
+    aae(Gv[1], 0, decimal=tol)
 
 
 def test_Givens_matvec_matmat():
@@ -261,7 +269,7 @@ def test_Givens_matvec_matmat():
     G[k,k] = c
     A2 = A.copy()
     mca.Givens_matvec(A=A2, c=c, s=s, i=i, k=k, order='GTA')
-    aae(A2, np.dot(G.T,A), decimal=10)
+    aae(A2, np.dot(G.T,A), decimal=tol)
     # verify AG
     G = np.identity(N)
     G[i,i] = c
@@ -270,7 +278,7 @@ def test_Givens_matvec_matmat():
     G[k,k] = c
     A2 = A.copy()
     mca.Givens_matvec(A=A2, c=c, s=s, i=i, k=k, order='AG')
-    aae(A2, np.dot(A,G), decimal=10)
+    aae(A2, np.dot(A,G), decimal=tol)
 
 
 def test_Givens_cs2rho_Givens_rho2cs():
@@ -281,82 +289,82 @@ def test_Givens_cs2rho_Givens_rho2cs():
     c, s = mca.Givens_rotation(a=a, b=b)
     rho = mca.Givens_cs2rho(c=c, s=s)
     c2, s2 = mca.Givens_rho2cs(rho=rho)
-    aae(c, c2, decimal=10)
-    aae(s, s2, decimal=10)
+    aae(c, c2, decimal=tol)
+    aae(s, s2, decimal=tol)
 
 
 # QR decomposition
 
 def test_QR_House_Q_from_QR_House_decomposition():
     'verify the computed Q and R matrices'
-    np.random.seed(7)
-    M = 6
-    N = 5
+    np.random.seed(18)
+    M = 7
+    N = 7
     A = np.random.rand(M,N)
     A2 = A.copy()
     mca.QR_House(A2)
     Q = mca.Q_from_QR_House(A=A2)
     R = np.triu(A2)
-    aae(A, np.dot(Q, R), decimal=10)
+    aae(A, Q@R, decimal=tol)
 
 
 def test_QR_House_Q_from_QR_House_orthogonal():
     'verify the orthogonality of the computed Q'
-    np.random.seed(78)
-    M = 6
-    N = 5
+    np.random.seed(18)
+    M = 7
+    N = 7
     A = np.random.rand(M,N)
     mca.QR_House(A)
     Q = mca.Q_from_QR_House(A=A)
-    aae(np.identity(M), np.dot(Q.T,Q), decimal=10)
+    aae(np.identity(M), Q.T@Q, decimal=tol)
 
 
 def test_QR_House_Cholesky():
     'verify that R is the transpose of the Cholesky factor of ATA'
-    np.random.seed(8)
-    M = 6
-    N = 5
+    np.random.seed(18)
+    M = 7
+    N = 7
     A = np.random.rand(M,N)
-    ATA = np.dot(A.T,A)
+    ATA = A.T@A
     mca.QR_House(A)
     R = np.triu(A)
-    aae(ATA, np.dot(R.T,R), decimal=10)
+    aae(ATA, R.T@R, decimal=tol)
 
 
 def test_QR_Givens_Q_from_QR_Givens_decomposition():
     'verify the computed Q and R matrices'
-    np.random.seed(7)
-    M = 6
-    N = 5
+    np.random.seed(18)
+    M = 7
+    N = 7
     A = np.random.rand(M,N)
     A2 = A.copy()
     mca.QR_Givens(A2)
     Q = mca.Q_from_QR_Givens(A=A2)
     R = np.triu(A2)
-    aae(A, np.dot(Q, R), decimal=10)
+    aae(A, np.dot(Q, R), decimal=tol)
 
 
 def test_QR_Givens_Q_from_QR_Givens_orthogonal():
     'verify the orthogonality of the computed Q'
-    np.random.seed(78)
-    M = 6
-    N = 5
+    np.random.seed(18)
+    M = 7
+    N = 7
     A = np.random.rand(M,N)
     mca.QR_Givens(A)
     Q = mca.Q_from_QR_Givens(A=A)
-    aae(np.identity(M), np.dot(Q.T,Q), decimal=10)
+    aae(np.identity(M), np.dot(Q.T,Q), decimal=tol)
 
 
 def test_QR_Givens_Cholesky():
     'verify that R is the transpose of the Cholesky factor of ATA'
-    np.random.seed(8)
-    M = 6
-    N = 5
+    np.random.seed(18)
+    M = 7
+    N = 7
     A = np.random.rand(M,N)
     ATA = np.dot(A.T,A)
     mca.QR_Givens(A)
     R = np.triu(A)
-    aae(ATA, np.dot(R.T,R), decimal=10)
+    aae(ATA, np.dot(R.T,R), decimal=tol)
 
 
 def test_QR_MGS_decomposition():
@@ -366,7 +374,7 @@ def test_QR_MGS_decomposition():
     N = 5
     A = np.random.rand(M,N)
     Q1, R1 = mca.QR_MGS(A)
-    aae(A, np.dot(Q1, R1), decimal=10)
+    aae(A, np.dot(Q1, R1), decimal=tol)
 
 
 def test_QR_MGS_Q_orthogonal():
@@ -376,7 +384,7 @@ def test_QR_MGS_Q_orthogonal():
     N = 5
     A = np.random.rand(M,N)
     Q1, R1 = mca.QR_MGS(A)
-    aae(np.identity(N), np.dot(Q1.T,Q1), decimal=10)
+    aae(np.identity(N), np.dot(Q1.T,Q1), decimal=tol)
 
 
 def test_QR_MCS_Cholesky():
@@ -387,7 +395,41 @@ def test_QR_MCS_Cholesky():
     A = np.random.rand(M,N)
     ATA = np.dot(A.T,A)
     Q1, R1 = mca.QR_MGS(A)
-    aae(ATA, np.dot(R1.T,R1), decimal=10)
+    aae(ATA, R1.T@R1, decimal=tol)
+
+
+# Hessenberg QR step
+def test_H_plus_RQ_decomposition():
+    'verify if H_plus is actually RQ'
+    # generate a square matrix
+    np.random.seed(18)
+    N = 7
+    A = np.random.rand(N,N)
+    # compute an upper Hessenberg matrix from A
+    H = A.copy()
+    mca.upper_Hessen_House(H)
+    H = np.triu(H, k=-1)
+    # compute the QR decomposition of H
+    R = H.copy()
+    mca.QR_Givens(R)
+    Q = mca.Q_from_QR_Givens(R)
+    R = np.triu(R)
+    # compute H_plus
+    H_plus = H.copy()
+    mca.H_plus_RQ(H_plus)
+    aae(H_plus, R@Q, decimal=tol)
+
+
+def test_upper_Hessen_House_decomposition():
+    'verify if the factored form retrives the original matrix'
+    np.random.seed(567)
+    N = 7
+    A = np.random.rand(N,N)
+    H = A.copy()
+    mca.upper_Hessen_House(H)
+    U0 = mca.U0_from_upper_Hessen_House(H)
+    H = np.triu(H, k=-1)
+    aae(A, np.linalg.multi_dot([U0, H, U0.T]), decimal=tol)
 
 
 # Tridiagonalization
@@ -400,7 +442,7 @@ def test_House_tridiag_symmetry():
     mca.House_tridiag(A)
     superdiag = np.diag(v=A,k=1)
     subdiag = np.diag(v=A,k=-1)
-    aae(superdiag, subdiag, decimal=10)
+    aae(superdiag, subdiag, decimal=tol)
 
 
 def test_House_tridiag_zeros():
@@ -411,11 +453,11 @@ def test_House_tridiag_zeros():
     A = A.T + A
     mca.House_tridiag(A)
     U = np.triu(A, k=2)
-    aae(np.zeros((N,N)), U, decimal=10)
+    aae(np.zeros((N,N)), U, decimal=tol)
 
 
 def test_House_tridiag_decomposition():
-    'verify if the factored form retrive the original matrix'
+    'verify if the factored form retrives the original matrix'
     np.random.seed(5)
     N = 7
     A = np.random.rand(N,N)
@@ -424,11 +466,10 @@ def test_House_tridiag_decomposition():
     mca.House_tridiag(Tridiag)
     Q = mca.Q_from_House_tridiag(Tridiag)
     Tridiag = np.triu(Tridiag, k=-1)
-    aae(A, np.linalg.multi_dot([Q, Tridiag, Q.T]), decimal=10)
+    aae(A, np.linalg.multi_dot([Q, Tridiag, Q.T]), decimal=tol)
+
 
 # Bidiagonalization
-
-
 def test_Golub_Kahan_bidiag_decomposition():
     'verify if the factored form retrieves the original matrix'
     np.random.seed(72)
@@ -440,7 +481,7 @@ def test_Golub_Kahan_bidiag_decomposition():
     # without its last M-N zero rows
     B = np.diag(v=alpha, k=0) + np.diag(v=beta, k=1)
     B2 = np.dot(U.T,A).dot(V)
-    aae(B, B2, decimal=10)
+    aae(B, B2, decimal=tol)
 
 
 def test_Golub_Kahan_bidiag_U_orthogonal():
@@ -450,7 +491,7 @@ def test_Golub_Kahan_bidiag_U_orthogonal():
     N = 5
     A = np.random.rand(M,N)
     alpha, beta, U, V = mca.Golub_Kahan_bidiag(A)
-    aae(np.identity(N), np.dot(U.T,U), decimal=10)
+    aae(np.identity(N), np.dot(U.T,U), decimal=tol)
 
 
 def test_Golub_Kahan_bidiag_V_orthogonal():
@@ -460,18 +501,4 @@ def test_Golub_Kahan_bidiag_V_orthogonal():
     N = 5
     A = np.random.rand(M,N)
     alpha, beta, U, V = mca.Golub_Kahan_bidiag(A)
-    aae(np.identity(N), np.dot(V.T,V), decimal=10)
-
-
-
-
-
-# def test_computed_versus_retrieved_Q():
-#     'compared Q matrices obtained from QR_Givens and Q_from_QR_Givens'
-#     np.random.seed(78)
-#     M = 6
-#     N = 5
-#     A = np.random.rand(M,N)
-#     Q1 = mca.QR_Givens(A)
-#     Q2 = mca.Q_from_QR_Givens(A)
-#     aae(Q1, Q2, decimal=10)
+    aae(np.identity(N), np.dot(V.T,V), decimal=tol)
