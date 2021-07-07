@@ -279,27 +279,32 @@ def House_vector(x, check_input=True):
     beta : float
         Scalar equal to 1/dot(v,v).
     '''
-    x = np.asarray(x)
+    x = np.atleast_1d(x)
     if check_input is True:
         assert x.ndim == 1, 'x must be a vector'
         #assert x.size > 1, 'x size must be greater than 1'
 
     N = x.size
-    sigma = np.dot(x[1:], x[1:])
-    v = np.hstack([1, x[1:]])
 
-    if (sigma == 0) and (x[0] >= 0):
-        beta = 0
-    elif (sigma == 0) and (x[0] < 0):
-        beta = -2
-    else:
-        mu = np.sqrt(x[0]**2 + sigma)
-        if x[0] <= 0:
-            v[0] = x[0] - mu
+    if N > 1:
+        sigma = np.dot(x[1:], x[1:])
+        v = np.hstack([1, x[1:]])
+
+        if (sigma == 0) and (x[0] >= 0):
+            beta = 0
+        elif (sigma == 0) and (x[0] < 0):
+            beta = -2
         else:
-            v[0] = -sigma/(x[0] + mu)
-        beta = 2*v[0]**2/(sigma + v[0]**2)
-        v /= v[0]
+            mu = np.sqrt(x[0]**2 + sigma)
+            if x[0] <= 0:
+                v[0] = x[0] - mu
+            else:
+                v[0] = -sigma/(x[0] + mu)
+            beta = 2*(v[0]**2)/(sigma + v[0]**2)
+            v /= v[0]
+    else:
+        v = np.array([0.])
+        beta = np.array([0.])
 
     return v, beta
 
@@ -570,7 +575,7 @@ def Q_from_QR_House(A, check_input=True):
     N = A.shape[1]
     # Compute the full M x M Q matrix
     Q = np.identity(M)
-    for j in range(N-1,-1,-1):
+    for j in range(N-2,-1,-1):
         v = np.hstack([1, A[j+1:,j]])
         beta = 2/(1 + np.dot(A[j+1:,j],A[j+1:,j]))
         Q[j:,j:] = House_matvec(A=Q[j:,j:], v=v, beta=beta,
@@ -653,7 +658,7 @@ def Q_from_QR_Givens(A, check_input=True):
 def QR_MGS(A, check_input=True):
     '''
     Compute the QR factorization of a full-column rank M x N
-    matrix A, where Q1 is an M x N orthogonal matrix and R1 is
+    matrix A, where M >= N, Q is an M x N orthogonal matrix and R is
     an N x N upper triangular matrix by applying the Modified
     Gram-Schmidt method (Golub and Van Loan, 2013, Algorithm 5.2.6,
     p. 255).
@@ -668,10 +673,10 @@ def QR_MGS(A, check_input=True):
 
     Returns
     -------
-    Q1 : array 2D
+    Q : array 2D
          M x N orthogonal matrix.
 
-    R1 : array 2D
+    R : array 2D
         N x N upper triangular matrix.
     '''
     A = np.asarray(A)
@@ -682,16 +687,16 @@ def QR_MGS(A, check_input=True):
     M = A.shape[0]
     N = A.shape[1]
 
-    Q1 = A.copy()
-    R1 = np.zeros((N,N))
+    Q = A.copy()
+    R = np.zeros((N,N))
     for k in range(N):
-        R1[k,k] = np.linalg.norm(Q1[:,k])
-        Q1[:,k] = Q1[:,k]/R1[k,k]
+        R[k,k] = np.linalg.norm(Q[:,k])
+        Q[:,k] = Q[:,k]/R[k,k]
         for j in range(k+1,N):
-            R1[k,j] = np.dot(Q1[:,k],Q1[:,j])
-            Q1[:,j] -= R1[k,j]*Q1[:,k]
+            R[k,j] = np.dot(Q[:,k],Q[:,j])
+            Q[:,j] -= R[k,j]*Q[:,k]
 
-    return Q1, R1
+    return Q, R
 
 
 # Hessenberg QR step
@@ -790,6 +795,72 @@ def U0_from_upper_Hessen_House(A, check_input=True):
                                    order='PA', check_input=False)
 
     return U0
+
+
+def Francis_QR_step(H, check_input=True):
+    '''
+    Given the an N x N real unreduced upper Hessenberg matrix H whose trailing
+    2-by-2 principal submatrix has eigenvalues a1 and a2, this algorithm
+    overwrites H with Z^T H Z, where Z is a product of Householder matrices
+    and Z^T (H - a1 I)(H - a2 I) is upper triangular (Golub and Van Loan, 2013,
+    Algorithm 7.5.1, p. 390).
+
+    Parameters
+    ----------
+    H : array 2D
+        N x N upper Hessenberg matrix to be factored. Possible complex
+        components are ignored.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+    '''
+    H = np.asarray(H).real
+    if check_input is True:
+        assert H.ndim == 2, 'H must be a matrix'
+        assert H.shape[0] == H.shape[1], 'H must be square'
+        assert np.all(np.diag(v=H, k=-1) != 0), 'H must be unreduced'
+
+    N = H.shape[0]
+
+    # used for accumulate Z
+    #Z = np.eye(N, N-2)
+    Z = np.eye(N)
+
+    # Compute first column of M = (H - a1 I)(H - a2 I)
+    s = H[-2,-2] + H[-1,-1]
+    t = H[-2,-2]*H[-1,-1] - H[-2,-1]*H[-1,-2]
+    x = H[0,0]*H[0,0] + H[0,1]*H[1,0] - s*H[0,0] + t
+    y = H[1,0]*(H[0,0] + H[1,1] - s)
+    z = H[1,0]*H[2,1]
+
+    for k in range(N-3):
+        v, beta = House_vector([x, y, z], check_input=True)
+        q = np.max([0,k-1])
+        H[k:k+3,q:] = House_matvec(A=H[k:k+3,q:], v=v, beta=beta,
+                                   order='PA', check_input= True)
+        r = np.min([k+4,N])
+        H[:r,k:k+3] = House_matvec(A=H[:r,k:k+3], v=v, beta=beta,
+                                   order='AP', check_input=True)
+        x = H[k+1,k]
+        y = H[k+2,k]
+        z = H[k+3,k]
+        # if k < (N - 3):
+        #    z = H[k+3,k]
+        # store the Householder vectors in the lower triangle of Z
+        Z[k+1:k+3,k] = v[1:]
+
+    x = H[N-2,N-3]
+    y = H[N-1,N-3]
+    z = 0
+    v, beta = House_vector([x, y, z], check_input=True)
+    H[N-3:,N-3:] = House_matvec(A=H[N-3:,N-3:], v=v, beta=beta,
+                                order='PA', check_input= True)
+    H[:,N-3:] = House_matvec(A=H[:,N-3:], v=v, beta=beta,
+                             order='AP', check_input=True)
+    # store the Householder vectors in the lower triangle of Z
+    #Z[k+1:k+3,k] = v[1:] #why?
+
+    return Z
 
 
 # Bidiagonalization

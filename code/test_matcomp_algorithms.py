@@ -167,12 +167,35 @@ def test_DFT_parseval_theorem():
 
 # Householder transformation
 
+def test_House_vector_beta_specific_input():
+    'verify beta value for speficif x[0] and sigma'
+
+    # sigma = np.dot(x[1:], x[1:])
+
+    # verify if for x.size = 1, v and beta are zero
+    x = 6.2
+    v, beta = mca.House_vector(x=x)
+    aae(beta, 0, decimal=tol)
+
+    # verify if for (sigma == 0) and (x[0] >= 0), beta = 0
+    x = np.zeros(7)
+    x[0] = 3
+    v, beta = mca.House_vector(x=x)
+    aae(beta, 0, decimal=tol)
+    # verify if for (sigma == 0) and (x[0] < 0), beta = -2
+    x = np.zeros(7)
+    x[0] = -4
+    v, beta = mca.House_vector(x=x)
+    aae(beta, -2, decimal=tol)
+
+
 def test_House_vector_parameter_beta():
     'verify that beta = 2/dot(v,v)'
     np.random.seed(23)
     a = np.random.rand(7)
     v, beta = mca.House_vector(x=a)
     aae(beta, 2/np.dot(v,v), decimal=tol)
+
 
 def test_House_vector_orthogonal_reflection():
     'verify that the resulting Householder reflection is orthogonal'
@@ -387,7 +410,7 @@ def test_QR_MGS_Q_orthogonal():
     aae(np.identity(N), np.dot(Q1.T,Q1), decimal=tol)
 
 
-def test_QR_MCS_Cholesky():
+def test_QR_MGS_Cholesky():
     'verify that R is the transpose of the Cholesky factor of ATA'
     np.random.seed(98)
     M = 6
