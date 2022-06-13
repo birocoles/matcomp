@@ -797,7 +797,7 @@ def U0_from_upper_Hessen_House(A, check_input=True):
     return U0
 
 
-def Francis_QR_step(H, check_input=True):
+def Francis_QR_step(H, check_input=True, return_v=True):
     '''
     Given the an N x N real unreduced upper Hessenberg matrix H whose trailing
     2-by-2 principal submatrix has eigenvalues a1 and a2, this algorithm
@@ -813,6 +813,10 @@ def Francis_QR_step(H, check_input=True):
 
     check_input : boolean
         If True, verify if the input is valid. Default is True.
+
+    return_v : boolean
+        If True, return a list containing the Householder vectors v without
+        their first elements.
     '''
     H = np.asarray(H).real
     if check_input is True:
@@ -820,11 +824,10 @@ def Francis_QR_step(H, check_input=True):
         assert H.shape[0] == H.shape[1], 'H must be square'
         assert np.all(np.diag(v=H, k=-1) != 0), 'H must be unreduced'
 
-    N = H.shape[0]
+    if return_v is True:
+        list_v = []
 
-    # used for accumulate Z
-    #Z = np.eye(N, N-2)
-    Z = np.eye(N)
+    N = H.shape[0]
 
     # Compute first column of M = (H - a1 I)(H - a2 I)
     s = H[-2,-2] + H[-1,-1]
@@ -833,34 +836,81 @@ def Francis_QR_step(H, check_input=True):
     y = H[1,0]*(H[0,0] + H[1,1] - s)
     z = H[1,0]*H[2,1]
 
+    # Compute the product P0 H P0
+    v, beta = House_vector([x,y,z])
+    H[:3,:] = House_matvec(A=H[:3,:], v=v, beta=beta, order='PA')
+    H[:4,:3] = House_matvec(A=H[:4,:3], v=v, beta=beta, order='AP')
+
+    if return_v is True:
+        list_v.append(v[1:])
+
+    # Compute the products from column k = 0 to N-4
     for k in range(N-3):
-        v, beta = House_vector([x, y, z], check_input=True)
-        q = np.max([0,k-1])
-        H[k:k+3,q:] = House_matvec(A=H[k:k+3,q:], v=v, beta=beta,
-                                   order='PA', check_input= True)
-        r = np.min([k+4,N])
-        H[:r,k:k+3] = House_matvec(A=H[:r,k:k+3], v=v, beta=beta,
-                                   order='AP', check_input=True)
+
         x = H[k+1,k]
         y = H[k+2,k]
         z = H[k+3,k]
-        # if k < (N - 3):
-        #    z = H[k+3,k]
-        # store the Householder vectors in the lower triangle of Z
-        Z[k+1:k+3,k] = v[1:]
 
-    x = H[N-2,N-3]
-    y = H[N-1,N-3]
-    z = 0
-    v, beta = House_vector([x, y, z], check_input=True)
-    H[N-3:,N-3:] = House_matvec(A=H[N-3:,N-3:], v=v, beta=beta,
-                                order='PA', check_input= True)
-    H[:,N-3:] = House_matvec(A=H[:,N-3:], v=v, beta=beta,
-                             order='AP', check_input=True)
-    # store the Householder vectors in the lower triangle of Z
-    #Z[k+1:k+3,k] = v[1:] #why?
+        v, beta = House_vector([x,y,z])
 
-    return Z
+        H[k+1:k+4,k:] = House_matvec(A=H[k+1:k+4,k:],
+                                     v=v, beta=beta, order='PA')
+        H[:k+5,k+1:k+4] = House_matvec(H[:k+5,k+1:k+4],
+                                       v=v, beta=beta, order='AP')
+
+        if return_v is True:
+            list_v.append(v[1:])
+
+    # Compute the product for column k = N-3
+    x = H[N-2, N-3]
+    y = H[N-1, N-3]
+
+    v, beta = House_vector([x,y])
+
+    H[N-2:,N-3:] = House_matvec(A=H[N-2:,N-3:], v=v, beta=beta, order='PA')
+    H[:,N-2:] = House_matvec(A=H[:,N-2:], v=v, beta=beta, order='AP')
+
+    if return_v is True:
+        list_v.append(v[1:])
+        return list_v
+
+
+def Z_from_Francis_QR_step(list_v, check_input=True):
+    '''
+    Retrieve the N x N matrix Z from the list of Householder vectors returned
+    by the function Francis_QR_step.
+
+    Parameters
+    ----------
+    list_v : list
+        N-2 Householder vectors (without their first elements) computed by the
+        function Francis_QR_step.
+
+    check_input : boolean
+        If True, verify if the input is valid. Default is True.
+
+    Returns
+    -------
+    Z : array 2D
+        N x N orthogonal matrix formed by the product of N-2 N x N Householder
+        matrices.
+    '''
+
+    N_2 = len(list_v)
+    if check_input is True:
+        for vector in list_v[:N_2-1]:
+            assert vector.size == 2, 'The first vector must have 2 elements'
+        assert list_v[-1].size == 1, 'The last vector must have 1 element'
+
+    # Compute the full N x N matrix Z
+    Z = np.identity(N_2+2)
+    for k, vector in enumerate(list_v(N_2-1)):
+        v = np.hstack([1, vector])
+        beta = 2/(1 + np.dot(vector,vector))
+        Q[:,j:] = House_matvec(A=Q[j:,j:], v=v, beta=beta,
+                                order='PA', check_input=False)
+
+    return Q
 
 
 # Bidiagonalization
