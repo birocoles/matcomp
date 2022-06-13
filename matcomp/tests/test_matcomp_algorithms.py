@@ -4,7 +4,7 @@ from scipy.linalg import dft
 from scipy.fft import fft as spfft
 from numpy.testing import assert_almost_equal as aae
 import pytest
-from .. import matcomp_algorithms as mca
+from .. import algorithms as mca
 
 # parameter 'decimal' in assert_almost_equal
 tol=10
