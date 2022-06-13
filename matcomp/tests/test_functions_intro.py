@@ -2,7 +2,7 @@ import numpy as np
 import scipy as sp
 from numpy.testing import assert_almost_equal as aae
 import pytest
-import functions_intro as fcs
+from .. import functions_intro as fcs
 
 ### scalar-vector product
 
