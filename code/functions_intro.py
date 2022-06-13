@@ -369,7 +369,7 @@ def dot_complex(x, y, conjugate=False, check_input=True, function='numba'):
         Vectors with N elements.
 
     conjugate : boolean
-        If True, uses the complex conjugate of y. Default is False.
+        If True, uses the complex conjugate of x. Default is False.
 
     check_input : boolean
         If True, verify if the input is valid. Default is True.
