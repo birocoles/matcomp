@@ -9,6 +9,7 @@ help:
 	@echo "  test      run the test suite (including doctests) and report coverage"
 	@echo "  report    open the html test report"
 	@echo "  clean     clean up build and generated files"
+	@echo "  style     automatically format code with black"
 	@echo ""
 	@echo "  uninstall   uninstall and remove from "
 
@@ -19,7 +20,7 @@ install:
 test:
 	# Run tests using coverage and pytest
 	mkdir -p $(TESTDIR)
-	cd $(TESTDIR); coverage run -m pytest; coverage html
+	cd $(TESTDIR); NUMBA_DISABLE_JIT=1 coverage run -m pytest; coverage html
 
 report:
 	# Show test report produced by coverage
@@ -30,6 +31,9 @@ clean:
 	find . -name ".coverage" -exec rm -v {} \;
 	find . -name ".pytest_cache" -exec rm -rvf {} \;
 	find . -name "__pycache__" -exec rm -rvf {} \;
+
+style:
+	python -m black --line-length 80 --verbose .
 
 uninstall:
 	python -m pip uninstall $(PROJECT)

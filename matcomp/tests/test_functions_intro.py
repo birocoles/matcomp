@@ -6,38 +6,69 @@ from .. import functions_intro as fcs
 
 ### scalar-vector product
 
-def test_scalar_vec_real_a_not_scalar():
-    'fail if a is not a scalar'
+
+def test_scalar_vec_real_dumb_a_not_scalar():
+    "fail if a is not a scalar"
     # 2d array
-    a1 = np.ones((3,2))
+    a1 = np.ones((3, 2))
     # list
-    a2 = [7.]
+    a2 = [7.0]
     # tuple
     a3 = (4, 8.2)
     vector = np.arange(4)
     for ai in [a1, a2, a3]:
         with pytest.raises(AssertionError):
             fcs.scalar_vec_real_dumb(ai, vector)
+
+
+def test_scalar_vec_real_numpy_a_not_scalar():
+    "fail if a is not a scalar"
+    # 2d array
+    a1 = np.ones((3, 2))
+    # list
+    a2 = [7.0]
+    # tuple
+    a3 = (4, 8.2)
+    vector = np.arange(4)
+    for ai in [a1, a2, a3]:
+        with pytest.raises(AssertionError):
             fcs.scalar_vec_real_numpy(ai, vector)
+
+
+def test_scalar_vec_real_numba_a_not_scalar():
+    "fail if a is not a scalar"
+    # 2d array
+    a1 = np.ones((3, 2))
+    # list
+    a2 = [7.0]
+    # tuple
+    a3 = (4, 8.2)
+    vector = np.arange(4)
+    for ai in [a1, a2, a3]:
+        with pytest.raises(AssertionError):
             fcs.scalar_vec_real_numba(ai, vector)
 
 
 def test_scalar_vec_real_x_not_1darray():
-    'fail if x is not a 1d array'
+    "fail if x is not a 1d array"
     a = 2
     # 2d array
-    x1 = np.ones((3,2))
+    x1 = np.ones((3, 2))
     # string
-    x2 = 'not array'
+    x2 = "not array"
     for xi in [x1, x2]:
         with pytest.raises(AssertionError):
             fcs.scalar_vec_real_dumb(a, xi)
+    for xi in [x1, x2]:
+        with pytest.raises(AssertionError):
             fcs.scalar_vec_real_numpy(a, xi)
+    for xi in [x1, x2]:
+        with pytest.raises(AssertionError):
             fcs.scalar_vec_real_numba(a, xi)
 
 
 def test_scalar_vec_real_known_values():
-    'check output produced by specific input'
+    "check output produced by specific input"
     scalar = 1
     vector = np.linspace(23.1, 52, 10)
     reference_output = np.copy(vector)
@@ -49,15 +80,28 @@ def test_scalar_vec_real_known_values():
     aae(reference_output, computed_output_numba, decimal=10)
 
 
+def test_scalar_vec_real_ignore_complex():
+    "complex part of input must be ignored"
+    scalar = 3.0
+    vector = np.ones(4) + 1j * np.ones(4)
+    reference_output = np.zeros(4) + 3.0
+    computed_output_dumb = fcs.scalar_vec_real_dumb(scalar, vector)
+    computed_output_numpy = fcs.scalar_vec_real_numpy(scalar, vector)
+    computed_output_numba = fcs.scalar_vec_real_numba(scalar, vector)
+    aae(reference_output, computed_output_dumb, decimal=10)
+    aae(reference_output, computed_output_numpy, decimal=10)
+    aae(reference_output, computed_output_numba, decimal=10)
+
+
 def test_scalar_vec_complex_functions_compare_numpy():
-    'compare scalar_vec_complex dumb, numpy and numba with numpy'
+    "compare scalar_vec_complex dumb, numpy and numba with numpy"
     np.random.seed(3)
-    scalar = np.random.rand() + 1j*np.random.rand()
-    vector = np.random.rand(13) + np.random.rand(13)*1j
-    output_dumb = fcs.scalar_vec_complex(scalar, vector, function='dumb')
-    output_numpy = fcs.scalar_vec_complex(scalar, vector, function='numpy')
-    output_numba = fcs.scalar_vec_complex(scalar, vector, function='numba')
-    reference = scalar*vector
+    scalar = np.random.rand() + 1j * np.random.rand()
+    vector = np.random.rand(13) + np.random.rand(13) * 1j
+    output_dumb = fcs.scalar_vec_complex(scalar, vector, function="dumb")
+    output_numpy = fcs.scalar_vec_complex(scalar, vector, function="numpy")
+    output_numba = fcs.scalar_vec_complex(scalar, vector, function="numba")
+    reference = scalar * vector
     aae(output_dumb, reference, decimal=10)
     aae(output_numpy, reference, decimal=10)
     aae(output_numba, reference, decimal=10)
@@ -65,29 +109,34 @@ def test_scalar_vec_complex_functions_compare_numpy():
 
 ### dot_product
 
+
 def test_dot_real_not_1D_arrays():
-    'fail due to input that is not 1D array'
-    vector_1 = np.ones((3,2))
+    "fail due to input that is not 1D array"
+    vector_1 = np.ones((3, 2))
     vector_2 = np.arange(4)
     with pytest.raises(AssertionError):
         fcs.dot_real_dumb(vector_1, vector_2)
+    with pytest.raises(AssertionError):
         fcs.dot_real_numpy(vector_1, vector_2)
+    with pytest.raises(AssertionError):
         fcs.dot_real_numba(vector_1, vector_2)
 
 
 def test_dot_real_different_sizes():
-    'fail due to inputs having different sizes'
-    vector_1 = np.linspace(5,6,7)
+    "fail due to inputs having different sizes"
+    vector_1 = np.linspace(5, 6, 7)
     vector_2 = np.arange(4)
     with pytest.raises(AssertionError):
         fcs.dot_real_dumb(vector_1, vector_2)
+    with pytest.raises(AssertionError):
         fcs.dot_real_numpy(vector_1, vector_2)
+    with pytest.raises(AssertionError):
         fcs.dot_real_numba(vector_1, vector_2)
 
 
 def test_dot_real_known_values():
-    'check output produced by specific input'
-    vector_1 = 0.1*np.ones(10)
+    "check output produced by specific input"
+    vector_1 = 0.1 * np.ones(10)
     vector_2 = np.linspace(23.1, 52, 10)
     reference_output = np.mean(vector_2)
     computed_output_dumb = fcs.dot_real_dumb(vector_1, vector_2)
@@ -99,7 +148,7 @@ def test_dot_real_known_values():
 
 
 def test_dot_real_compare_numpy_dot():
-    'compare with numpy.dot'
+    "compare with numpy.dot"
     np.random.seed(41)
     vector_1 = np.random.rand(13)
     vector_2 = np.random.rand(13)
@@ -113,7 +162,7 @@ def test_dot_real_compare_numpy_dot():
 
 
 def test_dot_real_commutativity():
-    'verify commutativity'
+    "verify commutativity"
     np.random.seed(19)
     a = np.random.rand(15)
     b = np.random.rand(15)
@@ -130,7 +179,7 @@ def test_dot_real_commutativity():
 
 
 def test_dot_real_distributivity():
-    'verify distributivity over sum'
+    "verify distributivity over sum"
     np.random.seed(5)
     a = np.random.rand(15)
     b = np.random.rand(15)
@@ -148,30 +197,43 @@ def test_dot_real_distributivity():
 
 
 def test_dot_real_scalar_multiplication():
-    'verify scalar multiplication property'
+    "verify scalar multiplication property"
     np.random.seed(8)
     a = np.random.rand(15)
     b = np.random.rand(15)
     c1 = 5.6
     c2 = 9.1
     # (c1 a) dot (c2 b) = c1c2 (a dot b)
-    output_c1a_c2b_dumb = fcs.dot_real_dumb(c1*a, c2*b)
-    output_c1c2_ab_dumb = c1*c2*fcs.dot_real_dumb(a, b)
-    output_c1a_c2b_numpy = fcs.dot_real_numpy(c1*a, c2*b)
-    output_c1c2_ab_numpy = c1*c2*fcs.dot_real_numpy(a, b)
-    output_c1a_c2b_numba = fcs.dot_real_numba(c1*a, c2*b)
-    output_c1c2_ab_numba = c1*c2*fcs.dot_real_numba(a, b)
+    output_c1a_c2b_dumb = fcs.dot_real_dumb(c1 * a, c2 * b)
+    output_c1c2_ab_dumb = c1 * c2 * fcs.dot_real_dumb(a, b)
+    output_c1a_c2b_numpy = fcs.dot_real_numpy(c1 * a, c2 * b)
+    output_c1c2_ab_numpy = c1 * c2 * fcs.dot_real_numpy(a, b)
+    output_c1a_c2b_numba = fcs.dot_real_numba(c1 * a, c2 * b)
+    output_c1c2_ab_numba = c1 * c2 * fcs.dot_real_numba(a, b)
     aae(output_c1a_c2b_dumb, output_c1c2_ab_dumb, decimal=10)
     aae(output_c1a_c2b_numpy, output_c1c2_ab_numpy, decimal=10)
     aae(output_c1a_c2b_numba, output_c1c2_ab_numba, decimal=10)
 
 
+def test_dot_real_ignore_complex():
+    "complex part of input must be ignored"
+    vector_1 = 0.1 * np.ones(10)
+    vector_2 = np.linspace(23.1, 52, 10) - 1j * np.ones(10)
+    reference_output = np.mean(vector_2.real)
+    computed_output_dumb = fcs.dot_real_dumb(vector_1, vector_2)
+    computed_output_numpy = fcs.dot_real_numpy(vector_1, vector_2)
+    computed_output_numba = fcs.dot_real_numba(vector_1, vector_2)
+    aae(reference_output, computed_output_dumb, decimal=10)
+    aae(reference_output, computed_output_numpy, decimal=10)
+    aae(reference_output, computed_output_numba, decimal=10)
+
+
 def test_dot_complex_functions_compare_numpy_dot():
-    'compare dot_complex_dumb, numpy and numba with numpy.dot'
+    "compare dot_complex_dumb, numpy and numba with numpy.dot"
     # first input complex
     np.random.seed(3)
-    vector_1 = np.random.rand(13) + np.random.rand(13)*1j
-    vector_2 = np.random.rand(13) + np.random.rand(13)*1j
+    vector_1 = np.random.rand(13) + np.random.rand(13) * 1j
+    vector_2 = np.random.rand(13) + np.random.rand(13) * 1j
     output_dumb = fcs.dot_complex_dumb(vector_1, vector_2)
     output_numpy = fcs.dot_complex_numpy(vector_1, vector_2)
     output_numba = fcs.dot_complex_numba(vector_1, vector_2)
@@ -182,14 +244,14 @@ def test_dot_complex_functions_compare_numpy_dot():
 
 
 def test_dot_complex_compare_numpy_dot():
-    'compare dot_complex with numpy.dot'
+    "compare dot_complex with numpy.dot"
     # first input complex
     np.random.seed(78)
-    vector_1 = np.random.rand(10) + np.random.rand(10)*1j
-    vector_2 = np.random.rand(10) + np.random.rand(10)*1j
-    output_dumb = fcs.dot_complex(vector_1, vector_2, function='dumb')
-    output_numpy = fcs.dot_complex(vector_1, vector_2, function='numpy')
-    output_numba = fcs.dot_complex(vector_1, vector_2, function='numba')
+    vector_1 = np.random.rand(10) + np.random.rand(10) * 1j
+    vector_2 = np.random.rand(10) + np.random.rand(10) * 1j
+    output_dumb = fcs.dot_complex(vector_1, vector_2, function="dumb")
+    output_numpy = fcs.dot_complex(vector_1, vector_2, function="numpy")
+    output_numba = fcs.dot_complex(vector_1, vector_2, function="numba")
     output_numpy_dot = np.dot(vector_1, vector_2)
     aae(output_dumb, output_numpy_dot, decimal=10)
     aae(output_numpy, output_numpy_dot, decimal=10)
@@ -197,17 +259,20 @@ def test_dot_complex_compare_numpy_dot():
 
 
 def test_dot_complex_compare_numpy_vdot():
-    'compare dot_complex with numpy.vdot'
+    "compare dot_complex with numpy.vdot"
     # first input complex
     np.random.seed(8)
-    vector_1 = np.random.rand(10) + np.random.rand(10)*1j
-    vector_2 = np.random.rand(10) + np.random.rand(10)*1j
-    output_dumb = fcs.dot_complex(vector_1, vector_2,
-                                  conjugate=True, function='dumb')
-    output_numpy = fcs.dot_complex(vector_1, vector_2,
-                                   conjugate=True, function='numpy')
-    output_numba = fcs.dot_complex(vector_1, vector_2,
-                                   conjugate=True, function='numba')
+    vector_1 = np.random.rand(10) + np.random.rand(10) * 1j
+    vector_2 = np.random.rand(10) + np.random.rand(10) * 1j
+    output_dumb = fcs.dot_complex(
+        vector_1, vector_2, conjugate=True, function="dumb"
+    )
+    output_numpy = fcs.dot_complex(
+        vector_1, vector_2, conjugate=True, function="numpy"
+    )
+    output_numba = fcs.dot_complex(
+        vector_1, vector_2, conjugate=True, function="numba"
+    )
     output_numpy_dot = np.vdot(vector_1, vector_2)
     aae(output_dumb, output_numpy_dot, decimal=10)
     aae(output_numpy, output_numpy_dot, decimal=10)
@@ -215,27 +280,30 @@ def test_dot_complex_compare_numpy_vdot():
 
 
 def test_dot_complex_invalid_function():
-    'fail due to invalid function'
+    "fail due to invalid function"
     vector_1 = np.ones(10)
-    vector_2 = np.arange(10)+1.5
+    vector_2 = np.arange(10) + 1.5
     with pytest.raises(ValueError):
-        fcs.dot_complex(vector_1, vector_2, function='not_valid_function')
+        fcs.dot_complex(vector_1, vector_2, function="not_valid_function")
 
 
 # Hadamard product
 
+
 def test_hadamard_real_different_shapes():
-    'fail due to inputs having different sizes'
-    a = np.linspace(5,10,8)
-    B = np.ones((4,4))
+    "fail due to inputs having different sizes"
+    a = np.linspace(5, 10, 8)
+    B = np.ones((4, 4))
     with pytest.raises(AssertionError):
         fcs.hadamard_real_dumb(a, B)
+    with pytest.raises(AssertionError):
         fcs.hadamard_real_numpy(a, B)
+    with pytest.raises(AssertionError):
         fcs.hadamard_real_numba(a, B)
 
 
 def test_hadamard_real_compare_asterisk():
-    'compare hadamard_real function with * operator'
+    "compare hadamard_real function with * operator"
     # for vectors
     np.random.seed(7)
     input1 = np.random.rand(10)
@@ -243,7 +311,7 @@ def test_hadamard_real_compare_asterisk():
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
     output_numpy = fcs.hadamard_real_numpy(input1, input2)
     output_numba = fcs.hadamard_real_numba(input1, input2)
-    output_asterisk = input1*input2
+    output_asterisk = input1 * input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
@@ -254,48 +322,78 @@ def test_hadamard_real_compare_asterisk():
     output_dumb = fcs.hadamard_real_dumb(input1, input2)
     output_numpy = fcs.hadamard_real_numpy(input1, input2)
     output_numba = fcs.hadamard_real_numba(input1, input2)
-    output_asterisk = input1*input2
+    output_asterisk = input1 * input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
 
 
+def test_hadamard_real_ignore_complex():
+    "complex part of input must be ignored"
+    # for vectors
+    np.random.seed(7)
+    input1 = np.random.rand(10)
+    input2 = np.random.rand(10) + 1j * np.ones(10)
+    output_dumb = fcs.hadamard_real_dumb(input1, input2)
+    output_numpy = fcs.hadamard_real_numpy(input1, input2)
+    output_numba = fcs.hadamard_real_numba(input1, input2)
+    output_reference = input1.real * input2.real
+    aae(output_dumb, output_reference, decimal=10)
+    aae(output_numpy, output_reference, decimal=10)
+    aae(output_numba, output_reference, decimal=10)
+    # for matrices
+    np.random.seed(9)
+    input1 = np.random.rand(5, 7) - 1j * np.ones((5, 7))
+    input2 = np.random.rand(5, 7)
+    output_dumb = fcs.hadamard_real_dumb(input1, input2)
+    output_numpy = fcs.hadamard_real_numpy(input1, input2)
+    output_numba = fcs.hadamard_real_numba(input1, input2)
+    output_reference = input1.real * input2.real
+    aae(output_dumb, output_reference, decimal=10)
+    aae(output_numpy, output_reference, decimal=10)
+    aae(output_numba, output_reference, decimal=10)
+
+
 def test_hadamard_complex_compare_asterisk():
-    'compare hadamard_complex function with * operator'
+    "compare hadamard_complex function with * operator"
     # for matrices
     np.random.seed(34)
     input1 = np.random.rand(4, 3)
     input2 = np.random.rand(4, 3)
-    output_dumb = fcs.hadamard_complex(input1, input2, function='dumb')
-    output_numpy = fcs.hadamard_complex(input1, input2, function='numpy')
-    output_numba = fcs.hadamard_complex(input1, input2, function='numba')
-    output_asterisk = input1*input2
+    output_dumb = fcs.hadamard_complex(input1, input2, function="dumb")
+    output_numpy = fcs.hadamard_complex(input1, input2, function="numpy")
+    output_numba = fcs.hadamard_complex(input1, input2, function="numba")
+    output_asterisk = input1 * input2
     aae(output_dumb, output_asterisk, decimal=10)
     aae(output_numpy, output_asterisk, decimal=10)
     aae(output_numba, output_asterisk, decimal=10)
 
 
 def test_hadamard_complex_invalid_function():
-    'fail due to invalid function'
+    "fail due to invalid function"
     vector_1 = np.ones(8)
-    vector_2 = np.arange(8)+1.5
+    vector_2 = np.arange(8) + 1.5
     with pytest.raises(ValueError):
-        fcs.hadamard_complex(vector_1, vector_2, function='not_valid_function')
+        fcs.hadamard_complex(vector_1, vector_2, function="not_valid_function")
+
 
 # Outer product
 
+
 def test_outer_real_input_not_vector():
-    'fail with non-vector inputs'
-    a = np.linspace(5,10,8)
-    B = np.ones((4,4))
+    "fail with non-vector inputs"
+    a = np.linspace(5, 10, 8)
+    B = np.ones((4, 4))
     with pytest.raises(AssertionError):
         fcs.outer_real_dumb(a, B)
+    with pytest.raises(AssertionError):
         fcs.outer_real_numpy(a, B)
+    with pytest.raises(AssertionError):
         fcs.outer_real_numba(a, B)
 
 
 def test_outer_real_compare_numpy_outer():
-    'compare with numpy.outer'
+    "compare with numpy.outer"
     np.random.seed(301)
     vector_1 = np.random.rand(13)
     vector_2 = np.random.rand(13)
@@ -309,9 +407,9 @@ def test_outer_real_compare_numpy_outer():
 
 
 def test_outer_real_known_values():
-    'check output produced by specific input'
+    "check output produced by specific input"
     vector_1 = np.ones(5)
-    vector_2 = np.arange(1,11)
+    vector_2 = np.arange(1, 11)
     reference_output = np.resize(vector_2, (vector_1.size, vector_2.size))
     computed_output_dumb = fcs.outer_real_dumb(vector_1, vector_2)
     computed_output_numpy = fcs.outer_real_numpy(vector_1, vector_2)
@@ -322,7 +420,7 @@ def test_outer_real_known_values():
 
 
 def test_outer_real_transposition():
-    'verify the transposition property'
+    "verify the transposition property"
     np.random.seed(72)
     a = np.random.rand(8)
     b = np.random.rand(5)
@@ -338,59 +436,75 @@ def test_outer_real_transposition():
 
 
 def test_outer_real_distributivity():
-    'verify the distributivity property'
+    "verify the distributivity property"
     np.random.seed(2)
     a = np.random.rand(5)
     b = np.random.rand(5)
     c = np.random.rand(4)
-    a_plus_b_outer_c_dumb = fcs.outer_real_dumb(a+b, c)
-    a_outer_c_plus_b_outer_c_dumb = fcs.outer_real_dumb(a, c) + \
-                                    fcs.outer_real_dumb(b, c)
-    a_plus_b_outer_c_numpy = fcs.outer_real_numpy(a+b, c)
-    a_outer_c_plus_b_outer_c_numpy = fcs.outer_real_numpy(a, c) + \
-                                     fcs.outer_real_numpy(b, c)
-    a_plus_b_outer_c_numba = fcs.outer_real_numba(a+b, c)
-    a_outer_c_plus_b_outer_c_numba = fcs.outer_real_numba(a, c) + \
-                                     fcs.outer_real_numba(b, c)
+    a_plus_b_outer_c_dumb = fcs.outer_real_dumb(a + b, c)
+    a_outer_c_plus_b_outer_c_dumb = fcs.outer_real_dumb(
+        a, c
+    ) + fcs.outer_real_dumb(b, c)
+    a_plus_b_outer_c_numpy = fcs.outer_real_numpy(a + b, c)
+    a_outer_c_plus_b_outer_c_numpy = fcs.outer_real_numpy(
+        a, c
+    ) + fcs.outer_real_numpy(b, c)
+    a_plus_b_outer_c_numba = fcs.outer_real_numba(a + b, c)
+    a_outer_c_plus_b_outer_c_numba = fcs.outer_real_numba(
+        a, c
+    ) + fcs.outer_real_numba(b, c)
     aae(a_plus_b_outer_c_dumb, a_outer_c_plus_b_outer_c_dumb, decimal=10)
     aae(a_plus_b_outer_c_numpy, a_outer_c_plus_b_outer_c_numpy, decimal=10)
     aae(a_plus_b_outer_c_numba, a_outer_c_plus_b_outer_c_numba, decimal=10)
 
 
 def test_outer_real_scalar_multiplication():
-    'verify scalar multiplication property'
+    "verify scalar multiplication property"
     np.random.seed(23)
     a = np.random.rand(3)
     b = np.random.rand(6)
     c = 3.4
-    ca_outer_b_dumb = fcs.outer_real_dumb(c*a, b)
-    a_outer_cb_dumb = fcs.outer_real_dumb(a, c*b)
-    ca_outer_b_numpy = fcs.outer_real_numpy(c*a, b)
-    a_outer_cb_numpy = fcs.outer_real_numpy(a, c*b)
-    ca_outer_b_numba = fcs.outer_real_numba(c*a, b)
-    a_outer_cb_numba = fcs.outer_real_numba(a, c*b)
+    ca_outer_b_dumb = fcs.outer_real_dumb(c * a, b)
+    a_outer_cb_dumb = fcs.outer_real_dumb(a, c * b)
+    ca_outer_b_numpy = fcs.outer_real_numpy(c * a, b)
+    a_outer_cb_numpy = fcs.outer_real_numpy(a, c * b)
+    ca_outer_b_numba = fcs.outer_real_numba(c * a, b)
+    a_outer_cb_numba = fcs.outer_real_numba(a, c * b)
     aae(ca_outer_b_dumb, a_outer_cb_dumb, decimal=10)
     aae(ca_outer_b_numpy, a_outer_cb_numpy, decimal=10)
     aae(ca_outer_b_numba, a_outer_cb_numba, decimal=10)
 
 
+def test_outer_real_ignore_complex():
+    "complex part of input must be ignored"
+    vector_1 = np.ones(5) - 0.4j * np.ones(5)
+    vector_2 = np.arange(1, 11)
+    reference_output = np.resize(vector_2, (vector_1.size, vector_2.size))
+    computed_output_dumb = fcs.outer_real_dumb(vector_1, vector_2)
+    computed_output_numpy = fcs.outer_real_numpy(vector_1, vector_2)
+    computed_output_numba = fcs.outer_real_numba(vector_1, vector_2)
+    aae(reference_output, computed_output_dumb, decimal=10)
+    aae(reference_output, computed_output_numpy, decimal=10)
+    aae(reference_output, computed_output_numba, decimal=10)
+
+
 def test_outer_complex_invalid_function():
-    'fail due to invalid function'
+    "fail due to invalid function"
     vector_1 = np.ones(3)
     vector_2 = np.arange(4)
     with pytest.raises(ValueError):
-        fcs.outer_complex(vector_1, vector_2, function='not_valid_function')
+        fcs.outer_complex(vector_1, vector_2, function="not_valid_function")
 
 
 def test_outer_complex_compare_numpy_outer():
-    'compare hadamard_complex function with * operator'
+    "compare hadamard_complex function with * operator"
     # for matrices
     np.random.seed(21)
-    input1 = np.random.rand(7) + 1j*np.random.rand(7)
-    input2 = np.random.rand(7) + 1j*np.random.rand(7)
-    output_dumb = fcs.outer_complex(input1, input2, function='dumb')
-    output_numpy = fcs.outer_complex(input1, input2, function='numpy')
-    output_numba = fcs.outer_complex(input1, input2, function='numba')
+    input1 = np.random.rand(7) + 1j * np.random.rand(7)
+    input2 = np.random.rand(7) + 1j * np.random.rand(7)
+    output_dumb = fcs.outer_complex(input1, input2, function="dumb")
+    output_numpy = fcs.outer_complex(input1, input2, function="numpy")
+    output_numba = fcs.outer_complex(input1, input2, function="numba")
     output_numpy_outer = np.outer(input1, input2)
     aae(output_dumb, output_numpy_outer, decimal=10)
     aae(output_numpy, output_numpy_outer, decimal=10)
@@ -399,21 +513,25 @@ def test_outer_complex_compare_numpy_outer():
 
 ### matrix-vector product
 
+
 def test_matvec_real_input_doesnt_match():
-    'fail when matrix columns doesnt match vector size'
-    A = np.ones((5,4))
+    "fail when matrix columns doesnt match vector size"
+    A = np.ones((5, 4))
     x = np.ones(3)
     with pytest.raises(AssertionError):
         fcs.matvec_real_dumb(A, x)
+    with pytest.raises(AssertionError):
         fcs.matvec_real_numba(A, x)
+    with pytest.raises(AssertionError):
         fcs.matvec_real_dot(A, x)
+    with pytest.raises(AssertionError):
         fcs.matvec_real_columns(A, x)
 
 
 def test_matvec_real_functions_compare_numpy_dot():
-    'compare matvec_real_XXXX with numpy.dot'
+    "compare matvec_real_XXXX with numpy.dot"
     np.random.seed(24)
-    matrix = np.random.rand(3,4)
+    matrix = np.random.rand(3, 4)
     vector = np.random.rand(4)
     output_dumb = fcs.matvec_real_dumb(matrix, vector)
     output_numba = fcs.matvec_real_numba(matrix, vector)
@@ -426,15 +544,31 @@ def test_matvec_real_functions_compare_numpy_dot():
     aae(output_columns, output_numpy_dot, decimal=10)
 
 
+def test_matvec_real_functions_ignore_complex():
+    "complex part of input must be ignored"
+    np.random.seed(24)
+    matrix = np.random.rand(3, 4) - 0.3j * np.ones((3, 4))
+    vector = np.random.rand(4) + 2j * np.ones(4)
+    output_dumb = fcs.matvec_real_dumb(matrix, vector)
+    output_numba = fcs.matvec_real_numba(matrix, vector)
+    output_dot = fcs.matvec_real_dot(matrix, vector)
+    output_columns = fcs.matvec_real_columns(matrix, vector)
+    output_reference = np.dot(matrix.real, vector.real)
+    aae(output_dumb, output_reference, decimal=10)
+    aae(output_numba, output_reference, decimal=10)
+    aae(output_dot, output_reference, decimal=10)
+    aae(output_columns, output_reference, decimal=10)
+
+
 def test_matvec_complex_compare_numpy_dot():
-    'compare matvec_complex with numpy.dot'
+    "compare matvec_complex with numpy.dot"
     np.random.seed(98)
-    matrix = np.random.rand(3,4) + 1j*np.random.rand(3,4)
-    vector = np.random.rand(4) + 1j*np.random.rand(4)
-    output_dumb = fcs.matvec_complex(matrix, vector, function='dumb')
-    output_numba = fcs.matvec_complex(matrix, vector, function='numba')
-    output_dot = fcs.matvec_complex(matrix, vector, function='dot')
-    output_columns = fcs.matvec_complex(matrix, vector, function='columns')
+    matrix = np.random.rand(3, 4) + 1j * np.random.rand(3, 4)
+    vector = np.random.rand(4) + 1j * np.random.rand(4)
+    output_dumb = fcs.matvec_complex(matrix, vector, function="dumb")
+    output_numba = fcs.matvec_complex(matrix, vector, function="numba")
+    output_dot = fcs.matvec_complex(matrix, vector, function="dot")
+    output_columns = fcs.matvec_complex(matrix, vector, function="columns")
     output_numpy_dot = np.dot(matrix, vector)
     aae(output_dumb, output_numpy_dot, decimal=10)
     aae(output_numba, output_numpy_dot, decimal=10)
@@ -442,56 +576,32 @@ def test_matvec_complex_compare_numpy_dot():
     aae(output_columns, output_numpy_dot, decimal=10)
 
 
-### diagonal matrix-vector product
-
-# def test_matvec_diag_real_invalid_input():
-#     'stop for invalid input'
-#     # a does not have ndim==1
-#     a = np.ones((5,4))
-#     x = np.ones(3)
-#     k = 0
-#     with pytest.raises(AssertionError):
-#         fcs.matvec_diag_real(a, x, k)
-#     # x does not have ndim==1
-#     a = np.ones(5)
-#     x = np.ones((3,3))
-#     k = 0
-#     with pytest.raises(AssertionError):
-#         fcs.matvec_diag_real(a, x, k)
-#     # k is negative
-#     a = np.ones(3)
-#     x = np.ones(3)
-#     k = -3
-#     with pytest.raises(AssertionError):
-#         fcs.matvec_diag_real(a, x, k)
-#     # |k| > N-1
-#     a = np.ones(3)
-#     x = np.ones(3)
-#     k = 5
-#     with pytest.raises(AssertionError):
-#         fcs.matvec_diag_real(a, x, k)
-
-
 ### matrix-matrix product
 
-def test_matmat_real_input_dont_match():
-    'fail when matrices dont match to compute the product'
-    A = np.ones((3,3))
-    B = np.ones((4,5))
+
+def test_matmat_real_input_doesnt_match():
+    "fail when matrices dont match to compute the product"
+    A = np.ones((3, 3))
+    B = np.ones((4, 5))
     with pytest.raises(AssertionError):
         fcs.matmat_real_dumb(A, B, check_input=True)
+    with pytest.raises(AssertionError):
         fcs.matmat_real_numba(A, B, check_input=True)
+    with pytest.raises(AssertionError):
         fcs.matmat_real_dot(A, B, check_input=True)
+    with pytest.raises(AssertionError):
         fcs.matmat_real_columns(A, B, check_input=True)
+    with pytest.raises(AssertionError):
         fcs.matmat_real_outer(A, B, check_input=True)
+    with pytest.raises(AssertionError):
         fcs.matmat_real_matvec(A, B, check_input=True)
 
 
 def test_matmat_real_functions_compare_numpy_dot():
-    'compare matmat_real_XXXX with numpy.dot'
+    "compare matmat_real_XXXX with numpy.dot"
     np.random.seed(35)
-    matrix_1 = np.random.rand(5,3)
-    matrix_2 = np.random.rand(3,3)
+    matrix_1 = np.random.rand(5, 3)
+    matrix_2 = np.random.rand(3, 3)
     output_dumb = fcs.matmat_real_dumb(matrix_1, matrix_2)
     output_numba = fcs.matmat_real_numba(matrix_1, matrix_2)
     output_dot = fcs.matmat_real_dot(matrix_1, matrix_2)
@@ -507,17 +617,37 @@ def test_matmat_real_functions_compare_numpy_dot():
     aae(output_outer, reference, decimal=10)
 
 
+def test_matmat_real_functions_ignore_complex():
+    "complex part of input must be ignored"
+    np.random.seed(35)
+    matrix_1 = np.random.rand(5, 3)
+    matrix_2 = np.random.rand(3, 3) - 0.7j * np.ones((3, 3))
+    output_dumb = fcs.matmat_real_dumb(matrix_1, matrix_2)
+    output_numba = fcs.matmat_real_numba(matrix_1, matrix_2)
+    output_dot = fcs.matmat_real_dot(matrix_1, matrix_2)
+    output_columns = fcs.matmat_real_columns(matrix_1, matrix_2)
+    output_matvec = fcs.matmat_real_matvec(matrix_1, matrix_2)
+    output_outer = fcs.matmat_real_outer(matrix_1, matrix_2)
+    reference = np.dot(matrix_1.real, matrix_2.real)
+    aae(output_dumb, reference, decimal=10)
+    aae(output_numba, reference, decimal=10)
+    aae(output_dot, reference, decimal=10)
+    aae(output_columns, reference, decimal=10)
+    aae(output_matvec, reference, decimal=10)
+    aae(output_outer, reference, decimal=10)
+
+
 def test_matmat_complex_compare_numpy_dot():
-    'compare matmat_complex with numpy.dot'
+    "compare matmat_complex with numpy.dot"
     np.random.seed(13)
-    matrix_1 = np.random.rand(5,3) + 1j*np.random.rand(5,3)
-    matrix_2 = np.random.rand(3,3) + 1j*np.random.rand(3,3)
-    output_dumb = fcs.matmat_complex(matrix_1, matrix_2, function='dumb')
-    output_numba = fcs.matmat_complex(matrix_1, matrix_2, function='numba')
-    output_dot = fcs.matmat_complex(matrix_1, matrix_2, function='dot')
-    output_columns = fcs.matmat_complex(matrix_1, matrix_2, function='columns')
-    output_matvec = fcs.matmat_complex(matrix_1, matrix_2, function='matvec')
-    output_outer = fcs.matmat_complex(matrix_1, matrix_2, function='outer')
+    matrix_1 = np.random.rand(5, 3) + 1j * np.random.rand(5, 3)
+    matrix_2 = np.random.rand(3, 3) + 1j * np.random.rand(3, 3)
+    output_dumb = fcs.matmat_complex(matrix_1, matrix_2, function="dumb")
+    output_numba = fcs.matmat_complex(matrix_1, matrix_2, function="numba")
+    output_dot = fcs.matmat_complex(matrix_1, matrix_2, function="dot")
+    output_columns = fcs.matmat_complex(matrix_1, matrix_2, function="columns")
+    output_matvec = fcs.matmat_complex(matrix_1, matrix_2, function="matvec")
+    output_outer = fcs.matmat_complex(matrix_1, matrix_2, function="outer")
     reference = np.dot(matrix_1, matrix_2)
     aae(output_dumb, reference, decimal=10)
     aae(output_numba, reference, decimal=10)
@@ -525,3 +655,58 @@ def test_matmat_complex_compare_numpy_dot():
     aae(output_columns, reference, decimal=10)
     aae(output_matvec, reference, decimal=10)
     aae(output_outer, reference, decimal=10)
+
+
+### triangular matrix-vector product
+
+
+def test_matvec_triu_real_dot_bad_input():
+    "fail when input are not matrix-vector or they doesn't match"
+    # correct input
+    A = np.ones((5, 3))
+    x = np.ones(3)
+    # A not a matrix
+    with pytest.raises(AssertionError):
+        fcs.matvec_triu_real_dot(np.ones(3), x)
+    # x not a vector
+    with pytest.raises(AssertionError):
+        fcs.matvec_triu_real_dot(A, np.ones((3, 2)))
+    # A columns different from x size
+    with pytest.raises(AssertionError):
+        fcs.matvec_triu_real_dot(np.ones((5, 4)), x)
+
+
+def test_matvec_triu_real_dot_compare_numpy_dot():
+    "compare matvec_triu_real_dot with numpy.dot"
+    np.random.seed(2)
+    matrix = np.triu(np.random.rand(7, 7))
+    vector = np.random.rand(7)
+    computed = fcs.matvec_triu_real_dot(matrix, vector)
+    reference = np.dot(matrix, vector)
+    aae(computed, reference, decimal=10)
+
+
+def test_matvec_triu_real_dot_ignore_lower_triangle():
+    "elements below main diagonal must be ignored"
+    np.random.seed(2)
+    matrix = np.random.rand(7, 7)
+    vector = np.random.rand(7)
+    computed = fcs.matvec_triu_real_dot(matrix, vector)
+    reference = np.dot(np.triu(matrix), vector)
+    aae(computed, reference, decimal=10)
+
+
+def test_matvec_real_functions_ignore_complex():
+    "complex part of input must be ignored"
+    np.random.seed(24)
+    matrix = np.random.rand(3, 4) - 0.3j * np.ones((3, 4))
+    vector = np.random.rand(4) + 2j * np.ones(4)
+    output_dumb = fcs.matvec_real_dumb(matrix, vector)
+    output_numba = fcs.matvec_real_numba(matrix, vector)
+    output_dot = fcs.matvec_real_dot(matrix, vector)
+    output_columns = fcs.matvec_real_columns(matrix, vector)
+    output_reference = np.dot(matrix.real, vector.real)
+    aae(output_dumb, output_reference, decimal=10)
+    aae(output_numba, output_reference, decimal=10)
+    aae(output_dot, output_reference, decimal=10)
+    aae(output_columns, output_reference, decimal=10)
